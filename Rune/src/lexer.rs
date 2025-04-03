@@ -11,6 +11,11 @@ pub enum Token {
     Symbol(char),
     Operator(String),
     List(String),
+    StringType(String),
+    IntType(String),
+    FloatType(String),
+    BoolType(String),
+    CharType(String),
     Eof,
 }
 
@@ -58,6 +63,11 @@ impl<'a> Lexer<'a> {
                         "true" => Token::BoolLiteral(true),
                         "false" => Token::BoolLiteral(false),
                         "if" | "elif" | "else" | "loop" | "func" | "" | "return" => Token::Keyword(ident),
+                        "string" => Token::StringType(ident),
+                        "int" => Token::IntType(ident),
+                        "float" => Token::FloatType(ident),
+                        "bool" => Token::BoolType(ident),
+                        "char" => Token::CharType(ident),
                         "list" => return Token::List(ident),
                         _ => Token::Ident(ident),
                     };
