@@ -1,3 +1,7 @@
+mod lexer;  // Import the lexer module
+
+use crate::lexer::{Lexer, Token}; // Bring Lexer and Token into sco
+
 fn main() {
     let source_code = r#"
         Int x = 42
