@@ -10,9 +10,11 @@ pub enum Token {
     Keyword(String),
     Symbol(char),
     Operator(String),
+    List(String),
     Eof,
 }
 
+#[derive(Debug)]
 pub struct Lexer<'a> {
     input: Peekable<Chars<'a>>,
 }
@@ -55,7 +57,8 @@ impl<'a> Lexer<'a> {
                     return match ident.as_str() {
                         "true" => Token::BoolLiteral(true),
                         "false" => Token::BoolLiteral(false),
-                        "if" | "elif" | "else" | "loop" | "func" | "return" => Token::Keyword(ident),
+                        "if" | "elif" | "else" | "loop" | "func" | "" | "return" => Token::Keyword(ident),
+                        "list" => return Token::List(ident),
                         _ => Token::Ident(ident),
                     };
                 }
@@ -66,7 +69,7 @@ impl<'a> Lexer<'a> {
                     return Token::StringLiteral(string_lit);
                 }
                 '+' | '-' | '*' | '/' => return Token::Operator(self.next_char().unwrap().to_string()),
-                '{' | '}' | '(' | ')' | '[' | ']' | ',' | ':' => return Token::Symbol(self.next_char().unwrap()),
+                '{' | '}' | '(' | ')' | '[' | ']' | ',' | ':' | '<' | '>' => return Token::Symbol(self.next_char().unwrap()),
                 _ => { self.next_char(); continue; }
             }
         }

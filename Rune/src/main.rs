@@ -4,10 +4,11 @@ use crate::lexer::{Lexer, Token}; // Bring Lexer and Token into sco
 
 fn main() {
     let source_code = r#"
-        Int x = 42
-        String name = "Ayaan"
-        Bool flag = true
+        int x = 42
+        string name = "Ayaan"
+        bool flag = true
         if x == 1 { return }
+        list<int, string>
     "#;
 
     let mut lexer = Lexer::new(source_code);
