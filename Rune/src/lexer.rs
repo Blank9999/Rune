@@ -10,6 +10,7 @@ pub enum Token {
     Keyword(String),
     Symbol(char),
     Operator(String),
+    Assignemt(String),
     List(String),
     StringType(String),
     IntType(String),
@@ -75,6 +76,9 @@ impl<'a> Lexer<'a> {
                 '#' => {
                     self.next_char();
                     self.consume_while(|c| c != '\n');
+                },
+                '=' => {
+                    return Token::Assignemt(self.next_char().unwrap().to_string())
                 },
                 '"' => {
                     self.next_char(); // consume opening quote
