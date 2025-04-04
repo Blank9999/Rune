@@ -10,9 +10,16 @@ pub enum Token {
     Keyword(String),
     Symbol(char),
     Operator(String),
+    List(String),
+    StringType(String),
+    IntType(String),
+    FloatType(String),
+    BoolType(String),
+    CharType(String),
     Eof,
 }
 
+#[derive(Debug)]
 pub struct Lexer<'a> {
     input: Peekable<Chars<'a>>,
 }
@@ -55,10 +62,20 @@ impl<'a> Lexer<'a> {
                     return match ident.as_str() {
                         "true" => Token::BoolLiteral(true),
                         "false" => Token::BoolLiteral(false),
-                        "if" | "elif" | "else" | "loop" | "func" | "return" => Token::Keyword(ident),
+                        "if" | "elif" | "else" | "loop" | "func" | "" | "return" => Token::Keyword(ident),
+                        "string" => Token::StringType(ident),
+                        "int" => Token::IntType(ident),
+                        "float" => Token::FloatType(ident),
+                        "bool" => Token::BoolType(ident),
+                        "char" => Token::CharType(ident),
+                        "list" => return Token::List(ident),
                         _ => Token::Ident(ident),
                     };
-                }
+                },
+                '#' => {
+                    self.next_char();
+                    self.consume_while(|c| c != '\n');
+                },
                 '"' => {
                     self.next_char(); // consume opening quote
                     let string_lit = self.consume_while(|c| c != '"');
@@ -66,7 +83,7 @@ impl<'a> Lexer<'a> {
                     return Token::StringLiteral(string_lit);
                 }
                 '+' | '-' | '*' | '/' => return Token::Operator(self.next_char().unwrap().to_string()),
-                '{' | '}' | '(' | ')' | '[' | ']' | ',' | ':' => return Token::Symbol(self.next_char().unwrap()),
+                '{' | '}' | '(' | ')' | '[' | ']' | ',' | ':' | '<' | '>' => return Token::Symbol(self.next_char().unwrap()),
                 _ => { self.next_char(); continue; }
             }
         }
