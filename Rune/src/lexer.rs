@@ -9,7 +9,7 @@ pub enum Token {
     BoolLiteral(bool),
     Keyword(String),
     Symbol(char),
-    Operator(String),
+    Operator(Operator),
     Assignemt(String),
     List(String),
     StringType(String),
@@ -18,6 +18,19 @@ pub enum Token {
     BoolType(String),
     CharType(String),
     Eof,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum Operator {
+    Arithmetic(ArithmeticOperator)
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum ArithmeticOperator {
+    Add,
+    Subtract,
+    Multiply,
+    Divide,
 }
 
 #[derive(Debug)]
@@ -85,8 +98,23 @@ impl<'a> Lexer<'a> {
                     let string_lit = self.consume_while(|c| c != '"');
                     self.next_char(); // consume closing quote
                     return Token::StringLiteral(string_lit);
-                }
-                '+' | '-' | '*' | '/' => return Token::Operator(self.next_char().unwrap().to_string()),
+                },
+                '+' => {
+                    self.next_char();
+                    return Token::Operator(Operator::Arithmetic(ArithmeticOperator::Add))
+                },
+                '-' => {
+                    self.next_char();
+                    return Token::Operator(Operator::Arithmetic(ArithmeticOperator::Subtract))
+                },
+                '*' => {
+                    self.next_char();
+                    return Token::Operator(Operator::Arithmetic(ArithmeticOperator::Multiply))
+                },
+                '/' => {
+                    self.next_char();
+                    return Token::Operator(Operator::Arithmetic(ArithmeticOperator::Divide))
+                },
                 '{' | '}' | '(' | ')' | '[' | ']' | ',' | ':' | '<' | '>' => return Token::Symbol(self.next_char().unwrap()),
                 _ => { self.next_char(); continue; }
             }
