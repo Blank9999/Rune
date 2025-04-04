@@ -7,7 +7,7 @@ fn main() {
         int x = 42
         string name = "Ayaan"
         bool flag = true
-        if x == 1 { return }
+        if x == 1 { return } # helll nah
         list<int, string>
     "#;
 

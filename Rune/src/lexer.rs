@@ -16,6 +16,7 @@ pub enum Token {
     FloatType(String),
     BoolType(String),
     CharType(String),
+    Comment(String),
     Eof,
 }
 
@@ -71,7 +72,12 @@ impl<'a> Lexer<'a> {
                         "list" => return Token::List(ident),
                         _ => Token::Ident(ident),
                     };
-                }
+                },
+                '#' => {
+                    self.next_char();
+                    let comment = self.consume_while(|c| c != '\n');
+                    return Token::Comment(comment);
+                },
                 '"' => {
                     self.next_char(); // consume opening quote
                     let string_lit = self.consume_while(|c| c != '"');
