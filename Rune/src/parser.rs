@@ -19,6 +19,20 @@ impl<'a> Parser<'a> {
         self.current = self.lexer.next_token();
     }
 
+    pub fn peek(&mut self) -> &Token {
+        // 1. Save the lexer's current state (clone the iterator)
+        let current_token = std::mem::replace(&mut self.current, Token::Eof);
+        // Get next token
+        let next_token = self.lexer.next_token();
+        
+        // Restore state
+        self.current = current_token;
+        
+        // Leak the token (safe in this context)
+        Box::leak(Box::new(next_token))
+    }
+
+
     fn expect(&mut self, expected: &Token) {
         if &self.current == expected {
             self.advance();
@@ -252,7 +266,15 @@ impl<'a> Parser<'a> {
                             body,
                         })
                     }
-                } else {
+                } 
+                else if let Token::Symbol('<') | Token::Symbol('>') = &self.current {
+                    self.advance(); 
+                    let condition = self.parse_expression();
+                    let body = self.parse_block();
+                    Statement::Loop(LoopExpr::Condition { condition, body })
+                    
+                } 
+                else {
                     panic!("Expected '->' after loop variable in range-based loop");
                 }
             }

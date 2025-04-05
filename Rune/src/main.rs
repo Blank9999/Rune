@@ -66,7 +66,7 @@ fn main() {
         // bool flag = true;
         // "#,
         r#"
-        loop num -> nums { 
+        loop x > 3 { 
             int x = 5
             string y = x
             loop x -> y {
@@ -76,7 +76,7 @@ fn main() {
         }
         "#,
         r#"
-        loop i -> 0 : 3 : 1 { 
+        loop num -> nums { 
             int x = 5
             string y = x
             loop x -> y {
@@ -85,6 +85,16 @@ fn main() {
             }
         }
         "#,
+        // r#"
+        // loop i -> 0 : 3 : 1 { 
+        //     int x = 5
+        //     string y = x
+        //     loop x -> y {
+        //         int a = 5
+        //         string b = c
+        //     }
+        // }
+        // "#,
         // r#"
         // func int ayaan(int x, bool y = false) {
         //     int z = 4
