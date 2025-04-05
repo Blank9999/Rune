@@ -66,13 +66,11 @@ impl<'a> Parser<'a> {
             | Token::CharType(_) => {
 
                 if let Token::Symbol('(') = self.peek() {
-                    println!("This reached the lambda case");
                     Statement::Function(self.parse_function())
                 } else if  let Token::Ident(_) = self.peek() {
-                    println!("This is for the variable declaration");
                     Statement::Declaration(self.parse_declaration())
                 } else {
-                    panic!("Something went wrong");
+                    panic!("It was neither the syntax for a vaiable declaration or a lambda function");
                 }
             }
         
@@ -217,10 +215,12 @@ impl<'a> Parser<'a> {
 
     fn parse_loop(&mut self) -> Statement {
         self.advance(); // consume 'loop'
+        // let peek = self.peek();
 
         match &self.current {
             // Range loop: `loop var -> iterable { ... }`
             Token::Ident(var) => {
+                // self.advance();
                 let var_name = var.clone();
                 self.advance(); // consume identifier
 
@@ -280,12 +280,14 @@ impl<'a> Parser<'a> {
             }
             // Condition-based loop `loop condition { ... }`
             Token::BoolLiteral(_) | Token::Ident(_) => {
+                // self.advance();
                 let condition = self.parse_expression();
                 let body = self.parse_block();
                 Statement::Loop(LoopExpr::Condition { condition, body })
             }
             // Infinite loop
             _ => {
+                // self.advance();
                 let body = self.parse_block();
                 Statement::Loop(LoopExpr::Infinite { body })
             }

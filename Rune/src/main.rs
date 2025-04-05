@@ -8,30 +8,30 @@ use crate::parser::Parser;
 
 fn main() {
     let test_cases = vec![
-        r#"
-        int x = 5
-        bool name = false
-        "#,
-        r#"
-        if hello {
-            int y = 3
-        }
-        "#,
-        r#"
-        int a = 10
-        if condition1,5 {
-        } elif another {
-        } elif {
-        } else {
-        }
-        "#,
-        r#"
-        bool flag = true;
-        "#,
-        r#"
-        loop { 
-        }
-        "#,
+        // r#"
+        // int x = 5
+        // bool name = false
+        // "#,
+        // r#"
+        // if hello {
+        //     int y = 3
+        // }
+        // "#,
+        // r#"
+        // int a = 10
+        // if condition1,5 {
+        // } elif another {
+        // } elif {
+        // } else {
+        // }
+        // "#,
+        // r#"
+        // bool flag = true;
+        // "#,
+        // r#"
+        // loop { 
+        // }
+        // "#,
         r#"
         func int ayaan(int x, bool y = false) {
             int z = 4
@@ -68,36 +68,36 @@ fn main() {
         //        r#"
         // int (string x, int y) {x + y}
         // "#,
-        // r#"
-        // loop x > 3 { 
-        //     int x = 5
-        //     string y = x
-        //     loop x -> y {
-        //         int a = 5
-        //         string b = c
-        //     }
-        // }
-        // "#,
-        // r#"
-        // loop num -> nums { 
-        //     int x = 5
-        //     string y = x
-        //     loop x -> y {
-        //         int a = 5
-        //         string b = c
-        //     }
-        // }
-        // "#,
-        // r#"
-        // loop i -> 0 : 3 : 1 { 
-        //     int x = 5
-        //     string y = x
-        //     loop x -> y {
-        //         int a = 5
-        //         string b = c
-        //     }
-        // }
-        // "#,
+        r#"
+        loop x > 3 { 
+            int x = 5
+            string y = x
+            loop x -> y {
+                int a = 5
+                string b = c
+            }
+        }
+        "#,
+        r#"
+        loop num -> nums { 
+            int x = 5
+            string y = x
+            loop x -> y {
+                int a = 5
+                string b = c
+            }
+        }
+        "#,
+        r#"
+        loop i -> 0 : 3 : 1 { 
+            int x = 5
+            string y = x
+            loop x -> y {
+                int a = 5
+                string b = c
+            }
+        }
+        "#,
         r#"
         func int ayaan(int x, bool y = false) {
             int z = 4
