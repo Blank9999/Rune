@@ -2,33 +2,54 @@ mod lexer;  // Import the lexer module
 mod parser;
 mod ast;  
 
-use crate::lexer::{Lexer,Token}; // Bring Lexer and Token into scope
+use crate::lexer::{Lexer, Token}; // Bring Lexer and Token into scope
 use crate::parser::Parser;
 
 
 fn main() {
-
-    let source_code = r#"
-        func addition(int x, int y) int {
-            int z = x + y
-            return z
+    let test_cases = vec![
+        r#"
+        int x = 5
+        bool name = false
+        "#,
+        r#"
+        if hello {
+            int y = 3
         }
-    "#;
-
-    let source_code = r#"
-        4 + 3 * 5 / 10 + 5 - 6
-    "#;
-
-    let mut lexer: Lexer<'_> = Lexer::new(source_code);
-    // let mut parser = Parser::new(lexer);
-    // let decl = parser.parse_program();
-    // println!("{:#?}", decl);
-
-    loop {
-        let token: Token = lexer.next_token();
-        println!("{:?}", token);
-        if token == Token::Eof {
-            break;
+        "#,
+        r#"
+        int a = 10
+        if condition1,5 {
+        } elif another {
+        } elif {
+        } else {
         }
+        "#,
+        r#"
+        bool flag = true;
+        "#,
+        r#"
+        loop { 
+        }
+        "#,
+        r#"
+        func int ayaan(int x, bool y = false) {
+            int z = 4
+            return x
+        }
+        "#,
+        r#"
+        int x = 4 + 3
+        "#,
+    ];
+
+    for (i, source_code) in test_cases.iter().enumerate() {
+        println!("--- Test Case {} ---", i + 1);
+        let lexer = Lexer::new(source_code);
+        let mut parser = Parser::new(lexer);
+
+        let program = parser.parse_program();
+        println!("{:#?}", program);
+        println!();
     }
 }

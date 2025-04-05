@@ -10,13 +10,15 @@ pub enum Token {
     Keyword(String),
     Symbol(char),
     Operator(Operator),
-    Assignemt(String),
+    Assignment(String),
     List(String),
     StringType(String),
     IntType(String),
     FloatType(String),
     BoolType(String),
     CharType(String),
+    RangeArrow,
+    Equality,
     Eof,
 }
 
@@ -91,7 +93,12 @@ impl<'a> Lexer<'a> {
                     self.consume_while(|c| c != '\n');
                 },
                 '=' => {
-                    return Token::Assignemt(self.next_char().unwrap().to_string())
+                    // self.next_char();
+                    // if let Some('=') = self.peek_char() {
+                    //     self.next_char(); // consume '='
+                    //     return Token::Equality; // Recognize '==' as a range arrow
+                    // }
+                    return Token::Assignment(self.next_char().unwrap().to_string())
                 },
                 '"' => {
                     self.next_char(); // consume opening quote
@@ -105,6 +112,10 @@ impl<'a> Lexer<'a> {
                 },
                 '-' => {
                     self.next_char();
+                    if let Some('>') = self.peek_char() {
+                        self.next_char(); // consume '>'
+                        return Token::RangeArrow; // Recognize '->' as a range arrow
+                    }
                     return Token::Operator(Operator::Arithmetic(ArithmeticOperator::Subtract))
                 },
                 '*' => {
