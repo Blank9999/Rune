@@ -211,43 +211,49 @@ impl<'a> Parser<'a> {
                 self.advance(); // consume identifier
 
                 // Expect the `->` symbol for range-based loop
-                if let Token::Symbol('-') = self.current {
-                    self.advance(); // consume '-'
-                    self.expect(&Token::Symbol('>')); // consume '>'
-                    
-                    let start_expr = self.parse_expression();
-                    let mut end_expr = None;
-                    let mut step_expr = None;
+                if let Token::RangeArrow = self.current {
+                    self.advance(); 
 
-                    // Optional end expression and step expression
-                    if let Token::Symbol(':') = self.current {
-                        self.advance();
-                        end_expr = Some(self.parse_expression());
+                    // Handles loop num -> nums {} type of range
+                    if let Token::Ident(name) = &self.current {
+                        let iteratable = self.parse_expression();
+                        let body = self.parse_block();
+                        
+                        Statement::Loop(LoopExpr::ForEach {
+                            var: var_name,
+                            iterable: iteratable,
+                            body,
+                        })
+                    } else {
+                        // Handles loop i -> 0 : 3 : 1 type of range
+                        let start_expr = self.parse_expression();
+                        let mut end_expr = None;
+                        let mut step_expr = None;
 
+                        // Optional end expression and step expression
+                        
                         if let Token::Symbol(':') = self.current {
                             self.advance();
-                            step_expr = Some(self.parse_expression());
+                            end_expr = Some(self.parse_expression());
+
+                            if let Token::Symbol(':') = self.current {
+                                self.advance();
+                                step_expr = Some(self.parse_expression());
+                            }
                         }
+
+                        // Now, expect the block of code for the body of the loop
+                        let body = self.parse_block();
+                        Statement::Loop(LoopExpr::Range {
+                            var: var_name,
+                            start: start_expr,
+                            end: end_expr.expect("Expected end expression"),
+                            step: step_expr,
+                            body,
+                        })
                     }
-
-                    // Now, expect the block of code for the body of the loop
-                    let body = self.parse_block();
-
-                    Statement::Loop(LoopExpr::Range {
-                        var: var_name,
-                        start: start_expr,
-                        end: end_expr.expect("Expected end expression"),
-                        step: step_expr,
-                        body,
-                    })
                 } else {
-                    // Handle for-each loop `loop var { ... }`
-                    let body = self.parse_block();
-                    Statement::Loop(LoopExpr::ForEach {
-                        var: var_name,
-                        iterable: self.parse_expression(),
-                        body,
-                    })
+                    panic!("Expected '->' after loop variable in range-based loop");
                 }
             }
             // Condition-based loop `loop condition { ... }`

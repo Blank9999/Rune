@@ -112,8 +112,10 @@ impl<'a> Lexer<'a> {
                 },
                 '-' => {
                     self.next_char();
+                    // println!("It reached here");
                     if let Some('>') = self.peek_char() {
                         self.next_char(); // consume '>'
+                        // println!("It reached here too");
                         return Token::RangeArrow; // Recognize '->' as a range arrow
                     }
                     return Token::Operator(Operator::Arithmetic(ArithmeticOperator::Subtract))
