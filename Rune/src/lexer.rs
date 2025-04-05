@@ -35,21 +35,25 @@ pub enum ArithmeticOperator {
     Divide,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Lexer<'a> {
     input: Peekable<Chars<'a>>,
+    peeked_token: Option<Token>,
 }
 
 impl<'a> Lexer<'a> {
     pub fn new(input: &'a str) -> Self {
-        Self { input: input.chars().peekable() }
+        Self { 
+            input: input.chars().peekable(),
+            peeked_token: None,
+        }
     }
     
     fn next_char(&mut self) -> Option<char> {
         self.input.next()
     }
     
-    fn peek_char(&mut self) -> Option<&char> {
+    pub fn peek_char(&mut self) -> Option<&char> {
         self.input.peek()
     }
     
@@ -67,8 +71,23 @@ impl<'a> Lexer<'a> {
         }
         result
     }
+
+    pub fn peek_token(&mut self) -> Token {
+        if let Some(token) = &self.peeked_token {
+            token.clone()
+        } else {
+            let token = self.next_token();
+            self.peeked_token = Some(token.clone());
+            token
+        }
+    }
     
     pub fn next_token(&mut self) -> Token {
+        // Return peeked token if we have one
+        if let Some(token) = self.peeked_token.take() {
+            return token;
+        }
+
         while let Some(&ch) = self.peek_char() {
             match ch {
                 ' ' | '\t' | '\n' | '\r' => { self.next_char(); continue; }
@@ -93,17 +112,17 @@ impl<'a> Lexer<'a> {
                     self.consume_while(|c| c != '\n');
                 },
                 '=' => {
-                    // self.next_char();
-                    // if let Some('=') = self.peek_char() {
-                    //     self.next_char(); // consume '='
-                    //     return Token::Equality; // Recognize '==' as a range arrow
-                    // }
-                    return Token::Assignment(self.next_char().unwrap().to_string())
+                    self.next_char();
+                    if let Some('=') = self.peek_char() {
+                        self.next_char();
+                        return Token::Equality;
+                    }
+                    return Token::Assignment("=".into())
                 },
                 '"' => {
-                    self.next_char(); // consume opening quote
+                    self.next_char();
                     let string_lit = self.consume_while(|c| c != '"');
-                    self.next_char(); // consume closing quote
+                    self.next_char();
                     return Token::StringLiteral(string_lit);
                 },
                 '+' => {
@@ -112,11 +131,9 @@ impl<'a> Lexer<'a> {
                 },
                 '-' => {
                     self.next_char();
-                    // println!("It reached here");
                     if let Some('>') = self.peek_char() {
-                        self.next_char(); // consume '>'
-                        // println!("It reached here too");
-                        return Token::RangeArrow; // Recognize '->' as a range arrow
+                        self.next_char();
+                        return Token::RangeArrow;
                     }
                     return Token::Operator(Operator::Arithmetic(ArithmeticOperator::Subtract))
                 },
@@ -128,7 +145,9 @@ impl<'a> Lexer<'a> {
                     self.next_char();
                     return Token::Operator(Operator::Arithmetic(ArithmeticOperator::Divide))
                 },
-                '{' | '}' | '(' | ')' | '[' | ']' | ',' | ':' | '<' | '>' => return Token::Symbol(self.next_char().unwrap()),
+                '{' | '}' | '(' | ')' | '[' | ']' | ',' | ':' | '<' | '>' => {
+                    return Token::Symbol(self.next_char().unwrap())
+                },
                 _ => { self.next_char(); continue; }
             }
         }

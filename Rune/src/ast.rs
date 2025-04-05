@@ -41,7 +41,7 @@ pub struct Parameter {
 #[derive(Debug)]
 pub struct Function {
     pub return_type: Type,
-    pub name: String,
+    pub name: Option<String>,
     pub parameters: Vec<Parameter>,
     pub body: Vec<Statement>,
 }

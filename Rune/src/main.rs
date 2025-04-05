@@ -65,26 +65,29 @@ fn main() {
         // r#"
         // bool flag = true;
         // "#,
-        r#"
-        loop x > 3 { 
-            int x = 5
-            string y = x
-            loop x -> y {
-                int a = 5
-                string b = c
-            }
-        }
-        "#,
-        r#"
-        loop num -> nums { 
-            int x = 5
-            string y = x
-            loop x -> y {
-                int a = 5
-                string b = c
-            }
-        }
-        "#,
+        //        r#"
+        // int (string x, int y) {x + y}
+        // "#,
+        // r#"
+        // loop x > 3 { 
+        //     int x = 5
+        //     string y = x
+        //     loop x -> y {
+        //         int a = 5
+        //         string b = c
+        //     }
+        // }
+        // "#,
+        // r#"
+        // loop num -> nums { 
+        //     int x = 5
+        //     string y = x
+        //     loop x -> y {
+        //         int a = 5
+        //         string b = c
+        //     }
+        // }
+        // "#,
         // r#"
         // loop i -> 0 : 3 : 1 { 
         //     int x = 5
@@ -95,15 +98,21 @@ fn main() {
         //     }
         // }
         // "#,
-        // r#"
-        // func int ayaan(int x, bool y = false) {
-        //     int z = 4
-        //     return x
-        // }
-        // "#,
-        // r#"
-        // int x = 4 + 3
-        // "#,
+        r#"
+        func int ayaan(int x, bool y = false) {
+            int z = 4
+            return x
+        }
+        "#,
+                       r#"
+        int (string x, int y) {
+            int z = 4
+             return x
+        }
+        "#,
+        r#"
+        int x = 4
+        "#,
     ];
 
     for (i, source_code) in test_cases.iter().enumerate() {

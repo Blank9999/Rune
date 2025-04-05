@@ -19,19 +19,9 @@ impl<'a> Parser<'a> {
         self.current = self.lexer.next_token();
     }
 
-    pub fn peek(&mut self) -> &Token {
-        // 1. Save the lexer's current state (clone the iterator)
-        let current_token = std::mem::replace(&mut self.current, Token::Eof);
-        // Get next token
-        let next_token = self.lexer.next_token();
-        
-        // Restore state
-        self.current = current_token;
-        
-        // Leak the token (safe in this context)
-        Box::leak(Box::new(next_token))
+    fn peek(&mut self) -> Token {
+        self.lexer.peek_token()
     }
-
 
     fn expect(&mut self, expected: &Token) {
         if &self.current == expected {
@@ -74,7 +64,16 @@ impl<'a> Parser<'a> {
             | Token::BoolType(_) 
             | Token::FloatType(_) 
             | Token::CharType(_) => {
-                Statement::Declaration(self.parse_declaration())
+
+                if let Token::Symbol('(') = self.peek() {
+                    println!("This reached the lambda case");
+                    Statement::Function(self.parse_function())
+                } else if  let Token::Ident(_) = self.peek() {
+                    println!("This is for the variable declaration");
+                    Statement::Declaration(self.parse_declaration())
+                } else {
+                    panic!("Something went wrong");
+                }
             }
         
             // optionally, if you use Token::Keyword("int"), support that too
@@ -90,6 +89,7 @@ impl<'a> Parser<'a> {
 
     fn parse_declaration(&mut self) -> Declaration {
         let var_type = self.parse_type();
+        // println!("{:?}",var_type);
         let identifier = if let Token::Ident(name) = &self.current {
             let id = name.clone();
             self.advance();
@@ -294,13 +294,21 @@ impl<'a> Parser<'a> {
 
     fn parse_function(&mut self) -> Function {
         let return_type = self.parse_type();
+
         let name = if let Token::Ident(name) = &self.current {
             let id = name.clone();
             self.advance();
-            id
+            Some(id)
         } else {
-            panic!("Expected function name");
+            None  // Anonymous function
         };
+        // let name = if let Token::Ident(name) = &self.current {
+        //     let id = name.clone();
+        //     self.advance();
+        //     id
+        // } else {
+        //     panic!("Expected function name");
+        // };
 
         self.expect(&Token::Symbol('('));
         let mut params = Vec::new();
