@@ -79,7 +79,7 @@ impl<'a> Parser<'a> {
                 Statement::Declaration(self.parse_declaration())
             }
 
-            Token::List(_) | Token::Symbol('<') => {
+            Token::List(_) | Token::Operator(Operator::Comparison(ComparisonOperator::LessThan)) => {
                 Statement::Declaration(self.parse_declaration())
             }
 
@@ -135,21 +135,23 @@ impl<'a> Parser<'a> {
             }
 
             // Union type: <int, string, float>
-            Token::Symbol('<') => {
+            Token::Operator(Operator::Comparison(ComparisonOperator::LessThan)) => {
+                print!("It reached here");
                 self.advance(); // consume '<'
                 let mut types = vec![self.parse_type()];
                 while let Token::Symbol(',') = self.current {
                     self.advance();
                     types.push(self.parse_type());
                 }
-                self.expect(&Token::Symbol('>'));
+                self.expect(&Token::Operator(Operator::Comparison(ComparisonOperator::GreaterThan)));
                 Type::Union(types)
             }
 
             // List types
             Token::List(_) => {
                 self.advance(); // consume 'List'
-                self.expect(&Token::Symbol('<'));
+                self.expect(&Token::Operator(Operator::Comparison(ComparisonOperator::LessThan)));
+
 
                 let mut inner_types = vec![self.parse_type()];
                 while let Token::Symbol(',') = self.current {
@@ -157,7 +159,7 @@ impl<'a> Parser<'a> {
                     inner_types.push(self.parse_type());
                 }
 
-                self.expect(&Token::Symbol('>'));
+                self.expect(&Token::Operator(Operator::Comparison(ComparisonOperator::GreaterThan)));
 
                 // Check if it's a fixed-length list like List<int>(3)
                 if let Token::Symbol('(') = self.current {

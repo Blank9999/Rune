@@ -81,38 +81,38 @@ fn main() {
         //        r#"
         // int (string x, int y) {x + y}
         // "#,
-        r#"
-        loop (x == 3 || x == 5 && x == 10 || x == 15) { 
-            int x = 5
-            string y = x
-        }
-        "#,
-        r#"
-        loop { 
-            int x = 5
-            string y = x
-        }
-        "#,
-        r#"
-        loop num -> nums { 
-            int x = 5
-            string y = x
-            loop x -> y {
-                int a = 5
-                string b = c
-            }
-        }
-        "#,
-        r#"
-        loop i -> 0 : 3 : 1 { 
-            int x = 5
-            string y = x
-            loop x -> y {
-                int a = 5
-                string b = c
-            }
-        }
-        "#,
+        // r#"
+        // loop (x == 3 || x == 5 && x == 10 || x == 15) { 
+        //     int x = 5
+        //     string y = x
+        // }
+        // "#,
+        // r#"
+        // loop { 
+        //     int x = 5
+        //     string y = x
+        // }
+        // "#,
+        // r#"
+        // loop num -> nums { 
+        //     int x = 5
+        //     string y = x
+        //     loop x -> y {
+        //         int a = 5
+        //         string b = c
+        //     }
+        // }
+        // "#,
+        // r#"
+        // loop i -> 0 : 3 : 1 { 
+        //     int x = 5
+        //     string y = x
+        //     loop x -> y {
+        //         int a = 5
+        //         string b = c
+        //     }
+        // }
+        // "#,
         // r#"
         // func int ayaan(int x, bool y = false) {
         //     int z = 4
@@ -129,23 +129,24 @@ fn main() {
         // int x = 4
         // "#,
 
+        // r#"
+        // func int ayaan(int x, bool y = false) {
+        //     int z = 4
+        //     return x
+        // }
+        // "#,
+        // r#"
+        // int (string x, int y) {
+        //     int z = 4
+        //      return x
+        // }
+        // "#,
+        // r#"
+        // list<int,float> f = [1,2]
+        // list<int,float>(2) f = [1,2.0]        
+        // "#,
         r#"
-        func int ayaan(int x, bool y = false) {
-            int z = 4
-            return x
-        }
-        "#,
-        r#"
-        int (string x, int y) {
-            int z = 4
-             return x
-        }
-        "#,
-        r#"
-        list<int,float> f = [1,2]
-        list<int,float>(2) f = [1,2.0]
-        <int, float> x = 1
-        
+         <int, float> x = 1      
         "#,
     ];
 
