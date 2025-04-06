@@ -104,14 +104,17 @@ fn main() {
             return x
         }
         "#,
-                       r#"
+        r#"
         int (string x, int y) {
             int z = 4
              return x
         }
         "#,
         r#"
-        int x = 4
+        list<int,float> f = [1,2]
+        list<int,float>(2) f = [1,2.0]
+        <int, float> x = 1
+        
         "#,
     ];
 
