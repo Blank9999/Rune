@@ -1,7 +1,7 @@
-use crate::lexer::{Lexer, Token};
+use crate::lexer::{Lexer, Token,Operator,ComparisonOperator,LogicalOperator};
 use crate::ast::{
     Type, Literal, Expression, Declaration, Program, Statement, IfExpr, LoopExpr,
-    Function, Parameter,
+    Function, Parameter,Condition
 };
 
 pub struct Parser<'a> {
@@ -41,6 +41,7 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_statement(&mut self) -> Statement {
+
         match &self.current {
             Token::Keyword(k) if k == "if" => self.parse_if(),
             Token::Keyword(k) if k == "loop" => self.parse_loop(),
@@ -64,7 +65,6 @@ impl<'a> Parser<'a> {
             | Token::BoolType(_) 
             | Token::FloatType(_) 
             | Token::CharType(_) => {
-
                 if let Token::Symbol('(') = self.peek() {
                     Statement::Function(self.parse_function())
                 } else if  let Token::Ident(_) = self.peek() {
@@ -83,7 +83,7 @@ impl<'a> Parser<'a> {
                 Statement::Expression(expr)
             }
         }
-    }    
+    }  
 
     fn parse_declaration(&mut self) -> Declaration {
         let var_type = self.parse_type();
@@ -158,20 +158,38 @@ impl<'a> Parser<'a> {
         }
     }
 
+    fn parse_comparison_expression(&mut self) -> Expression {
+        let mut left = self.parse_expression();
+        while let Token::Operator(Operator::Comparison(_)) = &self.current {
+            let op_token = self.current.clone();
+            self.advance(); // consume the operator
+
+            let right = self.parse_expression(); // again, use your existing parser
+            let op_str = self.token_to_op_string(&op_token);
+
+            left = Expression::BinaryOp(Box::new(left), op_str, Box::new(right));
+        }
+        left
+    }
+
+    fn token_to_op_string(&self, token: &Token) -> String {
+        match token {
+            Token::Operator(Operator::Comparison(ComparisonOperator::Equal)) => "==".to_string(),
+            Token::Operator(Operator::Comparison(ComparisonOperator::NotEqual)) => "!=".to_string(),
+            Token::Operator(Operator::Comparison(ComparisonOperator::LessThan)) => "<".to_string(),
+            Token::Operator(Operator::Comparison(ComparisonOperator::GreaterThan)) => ">".to_string(),
+            Token::Operator(Operator::Comparison(ComparisonOperator::LessThanOrEqual)) => "<=".to_string(),
+            Token::Operator(Operator::Comparison(ComparisonOperator::GreaterThanOrEqual)) => ">=".to_string(),
+            _ => panic!("Expected comparison operator, got {:?}", token),
+        }
+    }
+
+
     fn parse_if(&mut self) -> Statement {
         self.advance(); // consume 'if'
 
         let mut conditions = Vec::new();
-        while let Some(Token::IntLiteral(_) | Token::Ident(_) | Token::BoolLiteral(_)) = Some(&self.current) {
-            conditions.push(self.parse_expression());
-
-            if let Token::Symbol(',') = self.current {
-                self.advance();
-            } else {
-                break;
-            }
-        }
-
+        conditions.push(self.parse_condition());
         let then_block = self.parse_block();
 
         let mut elif_blocks = Vec::new();
@@ -213,14 +231,71 @@ impl<'a> Parser<'a> {
         })
     }
 
-    fn parse_loop(&mut self) -> Statement {
-        self.advance(); // consume 'loop'
-        // let peek = self.peek();
+    pub fn parse_condition(&mut self) -> Condition {
+        // self.expect(&Token::Symbol('('));
+        // let cond = self.parse_or_condition();
+        // self.expect(&Token::Symbol(')'));
+        // cond
 
-        match &self.current {
+        if let Token::Symbol('(') = &self.current {
+            // Handle the case where the condition is inside parentheses
+            self.advance(); // Consume '('
+            let cond = self.parse_or_condition();
+            self.expect(&Token::Symbol(')')); // Ensure we get the closing ')'
+            cond
+        } else {
+            // Handle the case where there's no parentheses (e.g., x == 3)
+            self.parse_or_condition()
+        }
+
+    }
+
+    fn parse_or_condition(&mut self) -> Condition {
+        let mut left = self.parse_and_condition();
+
+        while let Token::Operator(Operator::Logical(LogicalOperator::Or)) = self.current {
+            self.advance();
+            let right = self.parse_and_condition();
+            left = Condition::Or(Box::new(left), Box::new(right));
+        }
+
+        left
+    }
+
+    fn parse_and_condition(&mut self) -> Condition {
+        let mut left = self.parse_not_condition();
+
+        while let Token::Operator(Operator::Logical(LogicalOperator::And)) = self.current {
+            self.advance();
+            let right = self.parse_not_condition();
+            left = Condition::And(Box::new(left), Box::new(right));
+        }
+
+        left
+    }
+
+    fn parse_not_condition(&mut self) -> Condition {
+        if let Token::Operator(Operator::Logical(LogicalOperator::Not)) = self.current {
+            self.advance();
+            let inner = self.parse_not_condition();
+            Condition::Not(Box::new(inner))
+        } else if let Token::Symbol('(') = self.current {
+            self.advance(); // consume '('
+            let cond = self.parse_or_condition(); // recursive descent
+            self.expect(&Token::Symbol(')')); // expect ')'
+            Condition::Grouped(Box::new(cond)) // <--- Wrap it!
+        } else {
+            Condition::Single(self.parse_comparison_expression())
+        }
+    }
+
+
+    fn parse_loop(&mut self) -> Statement {
+        let peek = self.peek();
+        match peek {
             // Range loop: `loop var -> iterable { ... }`
             Token::Ident(var) => {
-                // self.advance();
+                self.advance();
                 let var_name = var.clone();
                 self.advance(); // consume identifier
 
@@ -266,28 +341,21 @@ impl<'a> Parser<'a> {
                             body,
                         })
                     }
-                } 
-                else if let Token::Symbol('<') | Token::Symbol('>') = &self.current {
-                    self.advance(); 
-                    let condition = self.parse_expression();
-                    let body = self.parse_block();
-                    Statement::Loop(LoopExpr::Condition { condition, body })
-                    
-                } 
-                else {
+                } else {
                     panic!("Expected '->' after loop variable in range-based loop");
                 }
             }
             // Condition-based loop `loop condition { ... }`
-            Token::BoolLiteral(_) | Token::Ident(_) => {
-                // self.advance();
-                let condition = self.parse_expression();
+            Token::BoolLiteral(_) | Token::Ident(_) | Token::Symbol('(') => {
+                self.advance();
+                let mut condition = Vec::new();
+                condition.push(self.parse_condition());
                 let body = self.parse_block();
                 Statement::Loop(LoopExpr::Condition { condition, body })
             }
             // Infinite loop
             _ => {
-                // self.advance();
+                self.advance();
                 let body = self.parse_block();
                 Statement::Loop(LoopExpr::Infinite { body })
             }
