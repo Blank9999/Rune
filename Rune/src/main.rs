@@ -46,17 +46,30 @@ fn main() {
 
     let test_cases = vec![
         // r#"
-        // int x = 5
-        // bool name = false
+        // x == y
+        // x > y
+        // x < y
+        // x >= y
+        // x <= y
+        // x != y
+        // name && address
+        // name || address
+        // !name
         // "#,
         // r#"
-        // if hello {
-        //     int y = 3
+        // int x = 5 
+        // int y = 10
+        // x == y
+        // "#,
+        // r#"
+        // if x == 3 || x == 5 && x != 10 {
+        // } elif another {
+        // } elif {
+        // } else {
         // }
         // "#,
         // r#"
-        // int a = 10
-        // if condition1,5 {
+        // if (x == 3 || x == 5 && x == 10 || x == 15) {
         // } elif another {
         // } elif {
         // } else {
@@ -69,13 +82,15 @@ fn main() {
         // int (string x, int y) {x + y}
         // "#,
         r#"
-        loop x > 3 { 
+        loop (x == 3 || x == 5 && x == 10 || x == 15) { 
             int x = 5
             string y = x
-            loop x -> y {
-                int a = 5
-                string b = c
-            }
+        }
+        "#,
+        r#"
+        loop { 
+            int x = 5
+            string y = x
         }
         "#,
         r#"
@@ -98,6 +113,22 @@ fn main() {
             }
         }
         "#,
+        // r#"
+        // func int ayaan(int x, bool y = false) {
+        //     int z = 4
+        //     return x
+        // }
+        // "#,
+        //                r#"
+        // int (string x, int y) {
+        //     int z = 4
+        //      return x
+        // }
+        // "#,
+        // r#"
+        // int x = 4
+        // "#,
+
         r#"
         func int ayaan(int x, bool y = false) {
             int z = 4

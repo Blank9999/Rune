@@ -27,8 +27,18 @@ pub enum Expression {
     Literal(Literal),
     Identifier(String),
     BinaryOp(Box<Expression>, String, Box<Expression>),
+    UnaryOp(String, Box<Expression>),
     FunctionCall { name: String, args: Vec<Expression> },
     InterpolatedCall(String, Vec<Expression>), // for `create{pet}()`
+}
+
+#[derive(Debug)]
+pub enum Condition {
+    Single(Expression),
+    And(Box<Condition>, Box<Condition>),
+    Or(Box<Condition>, Box<Condition>),
+    Not(Box<Condition>),
+    Grouped(Box<Condition>),
 }
 
 #[derive(Debug)]
@@ -55,7 +65,8 @@ pub struct Function {
 
 #[derive(Debug)]
 pub struct IfExpr {
-    pub conditions: Vec<Expression>,
+    // pub conditions: Vec<Expression>,
+    pub conditions: Vec<Condition>,
     pub then_block: Vec<Statement>,
     pub elif_blocks: Vec<(Vec<Expression>, Vec<Statement>)>,
     pub else_block: Option<Vec<Statement>>,
@@ -79,7 +90,7 @@ pub enum LoopExpr {
         body: Vec<Statement>,
     },
     Condition { // loop x < 3 {}
-        condition: Expression,
+        condition: Vec<Condition>,
         body: Vec<Statement>,
     },
 }
