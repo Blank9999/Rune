@@ -7,6 +7,8 @@ pub enum Token {
     IntLiteral(i64),
     StringLiteral(String),
     BoolLiteral(bool),
+    FloatLiteral(f64),
+    CharLiteral(char),
     Keyword(String),
     Symbol(char),
     Operator(Operator),
@@ -20,6 +22,7 @@ pub enum Token {
     RangeArrow,
     Equality,
     Eof,
+    Error(String),
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -91,7 +94,22 @@ impl<'a> Lexer<'a> {
         while let Some(&ch) = self.peek_char() {
             match ch {
                 ' ' | '\t' | '\n' | '\r' => { self.next_char(); continue; }
-                '0'..='9' => return Token::IntLiteral(self.consume_while(|c| c.is_digit(10)).parse().unwrap()),
+                '0'..='9' => {
+                    let val = self.consume_while(|c| c.is_digit(10)).parse().unwrap();
+                    if let Some('.') = self.peek_char() {
+                        self.next_char();
+                        let val2 :String = self.consume_while(|c| c.is_digit(10)).parse().unwrap();
+                        let fstr = format!("{}.{}", val, val2);
+                        let f = fstr.parse::<f64>();
+                        match f {
+                            Ok(float_value) => return Token::FloatLiteral(float_value),
+                            Err(e) => {
+                                panic!("Failed to parse float: {}", e);
+                            }
+                        }
+                    }
+                    return Token::IntLiteral(val)
+                },
                 'a'..='z' | 'A'..='Z' | '_' => {
                     let ident = self.consume_while(|c| c.is_alphanumeric() || c == '_');
                     return match ident.as_str() {
@@ -119,6 +137,12 @@ impl<'a> Lexer<'a> {
                     }
                     return Token::Assignment("=".into())
                 },
+                // '\'' => {
+                //     self.next_char();
+                //     let char_lit = self.consume_while(|c| c != '\'');
+                //     self.next_char();
+                //     return Token::CharLiteral(char_lit);
+                // },
                 '"' => {
                     self.next_char();
                     let string_lit = self.consume_while(|c| c != '"');

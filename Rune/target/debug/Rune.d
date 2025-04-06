@@ -1,1 +1,1 @@
-/Users/nahannaushad/Desktop/Rune/Rune/target/debug/Rune: /Users/nahannaushad/Desktop/Rune/Rune/src/ast.rs /Users/nahannaushad/Desktop/Rune/Rune/src/lexer.rs /Users/nahannaushad/Desktop/Rune/Rune/src/main.rs /Users/nahannaushad/Desktop/Rune/Rune/src/parser.rs
+/Users/ayaan/Desktop/Rune/Rune/target/debug/Rune: /Users/ayaan/Desktop/Rune/Rune/src/ast.rs /Users/ayaan/Desktop/Rune/Rune/src/lexer.rs /Users/ayaan/Desktop/Rune/Rune/src/main.rs /Users/ayaan/Desktop/Rune/Rune/src/parser.rs
