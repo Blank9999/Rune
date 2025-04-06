@@ -128,6 +128,25 @@ fn main() {
         // r#"
         // int x = 4
         // "#,
+
+        r#"
+        func int ayaan(int x, bool y = false) {
+            int z = 4
+            return x
+        }
+        "#,
+        r#"
+        int (string x, int y) {
+            int z = 4
+             return x
+        }
+        "#,
+        r#"
+        list<int,float> f = [1,2]
+        list<int,float>(2) f = [1,2.0]
+        <int, float> x = 1
+        
+        "#,
     ];
 
     for (i, source_code) in test_cases.iter().enumerate() {

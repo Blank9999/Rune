@@ -6,6 +6,10 @@ pub enum Type {
     Float,
     Char,
     Custom(String), // for things like List<int>
+
+    List(Vec<Type>), // Dynamic list of allowed types
+    FixedList(Vec<Type>, usize), // Fixed-length list
+    Union(Vec<Type>), // Union of types like <int, string>
 }
 
 #[derive(Debug)]
@@ -13,6 +17,9 @@ pub enum Literal {
     Int(i64),
     String(String),
     Bool(bool),
+    Float(f64),
+    Char(char),
+    List(Vec<Expression>),
 }
 
 #[derive(Debug)]
