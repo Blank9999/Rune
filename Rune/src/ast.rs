@@ -106,7 +106,7 @@ pub enum Statement {
     Function(Function),
     Return(Expression),
     Guard(Expression), // this is just a statement that should break the loop
-    Input { var_type: Type, identifier: String }, 
+    Input { var_type: Type, identifier: String, expression: Expression }, 
     Output(Expression),
 }
 

@@ -9,7 +9,7 @@ pub enum Token {
     StringLiteral(String),
     BoolLiteral(bool),
     FloatLiteral(f64),
-    CharLiteral(char),
+    // CharLiteral(char),
     Keyword(String),
     Symbol(char),
     Operator(Operator),
@@ -22,7 +22,7 @@ pub enum Token {
     CharType(String),
     RangeArrow,
     Eof,
-    Error(String),
+    // Error(String),
     InputToken,
     OutputToken,
 }

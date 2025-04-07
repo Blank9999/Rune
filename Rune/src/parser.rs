@@ -113,8 +113,8 @@ impl<'a> Parser<'a> {
     
         if let Token::InputToken = self.current {
             self.advance();
-            self.advance(); // imma talk to ayaan about this
-            Statement::Input { var_type, identifier }
+            let expression = self.parse_expression(); // imma talk to ayaan about this
+            Statement::Input { var_type, identifier, expression }
     
         } else if let Token::Assignment(_) = self.current {
             self.advance();
