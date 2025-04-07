@@ -9,6 +9,8 @@ pub enum Type {
 
     List(Vec<Type>), // Dynamic list of allowed types
     FixedList(Vec<Type>, usize), // Fixed-length list
+    ConditionList(Vec<Condition>),
+    ConditionFixedList(Vec<Condition>,usize),
     Union(Vec<Type>), // Union of types like <int, string>
 }
 
@@ -104,6 +106,8 @@ pub enum Statement {
     Function(Function),
     Return(Expression),
     Guard(Expression), // this is just a statement that should break the loop
+    Input { var_type: Type, identifier: String }, 
+    Output(Expression),
 }
 
 #[derive(Debug)]

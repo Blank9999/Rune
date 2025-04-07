@@ -21,9 +21,10 @@ pub enum Token {
     BoolType(String),
     CharType(String),
     RangeArrow,
-    Equality,
     Eof,
     Error(String),
+    InputToken,
+    OutputToken,
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -220,6 +221,9 @@ impl<'a> Lexer<'a> {
                     if let Some('=') = self.peek_char() {
                         self.next_char();
                         return Token::Operator(Operator::Comparison(ComparisonOperator::GreaterThanOrEqual));
+                    } else if let Some('>') = self.peek_char() {
+                        self.next_char();
+                        return Token::InputToken;
                     }
                     return Token::Operator(Operator::Comparison(ComparisonOperator::GreaterThan));
                 },
@@ -228,6 +232,9 @@ impl<'a> Lexer<'a> {
                     if let Some('=') = self.peek_char() {
                         self.next_char();
                         return Token::Operator(Operator::Comparison(ComparisonOperator::LessThanOrEqual));
+                    } else if let Some('<') = self.peek_char() {
+                        self.next_char();
+                        return Token::OutputToken;
                     }
                     return Token::Operator(Operator::Comparison(ComparisonOperator::LessThan));
                 },

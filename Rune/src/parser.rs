@@ -60,6 +60,10 @@ impl<'a> Parser<'a> {
                 Statement::Function(self.parse_function())
             }
 
+            Token::OutputToken => {
+                self.parse_output()
+            }
+
             Token::IntType(_) 
             | Token::StringType(_) 
             | Token::BoolType(_) 
@@ -68,7 +72,7 @@ impl<'a> Parser<'a> {
                 if let Token::Symbol('(') = self.peek() {
                     Statement::Function(self.parse_function())
                 } else if  let Token::Ident(_) = self.peek() {
-                    Statement::Declaration(self.parse_declaration())
+                    self.parse_declaration()
                 } else {
                     panic!("It was neither the syntax for a vaiable declaration or a lambda function");
                 }
@@ -76,11 +80,11 @@ impl<'a> Parser<'a> {
         
             // optionally, if you use Token::Keyword("int"), support that too
             Token::Keyword(k) if ["int", "string", "bool", "char", "float"].contains(&k.as_str()) => {
-                Statement::Declaration(self.parse_declaration())
+                self.parse_declaration()
             }
 
             Token::List(_) | Token::Operator(Operator::Comparison(ComparisonOperator::LessThan)) => {
-                Statement::Declaration(self.parse_declaration())
+                self.parse_declaration()
             }
 
             _ => {
@@ -90,9 +94,15 @@ impl<'a> Parser<'a> {
         }
     }  
 
-    fn parse_declaration(&mut self) -> Declaration {
+    fn parse_output(&mut self) -> Statement {
+        self.advance();
+        let expression = self.parse_expression();
+        Statement::Output(expression)
+    }
+
+    fn parse_declaration(&mut self) -> Statement {
         let var_type = self.parse_type();
-        // println!("{:?}",var_type);
+    
         let identifier = if let Token::Ident(name) = &self.current {
             let id = name.clone();
             self.advance();
@@ -100,14 +110,22 @@ impl<'a> Parser<'a> {
         } else {
             panic!("Expected identifier, found {:?}", self.current);
         };
-
-        self.expect(&Token::Assignment("=".into()));
-        let value = self.parse_expression();
-
-        Declaration {
-            var_type,
-            identifier,
-            value,
+    
+        if let Token::InputToken = self.current {
+            self.advance();
+            self.advance(); // imma talk to ayaan about this
+            Statement::Input { var_type, identifier }
+    
+        } else if let Token::Assignment(_) = self.current {
+            self.advance();
+            let value = self.parse_expression();
+            Statement::Declaration(Declaration {
+                var_type,
+                identifier,
+                value,
+            })
+        } else {
+            panic!("Expected: == or >>, found {:?}",self.current);
         }
     }
 
@@ -182,6 +200,7 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_expression(&mut self) -> Expression {
+        println!("IT reached expression");
         match &self.current {
             Token::IntLiteral(n) => {
                 let lit = Literal::Int(*n);
@@ -253,11 +272,13 @@ impl<'a> Parser<'a> {
 
     fn parse_comparison_expression(&mut self) -> Expression {
         let mut left = self.parse_expression();
+        // let mut left = self.parse_condition();
         while let Token::Operator(Operator::Comparison(_)) = &self.current {
             let op_token = self.current.clone();
             self.advance(); // consume the operator
 
             let right = self.parse_expression(); // again, use your existing parser
+            // let right = self.parse_expression();
             let op_str = self.token_to_op_string(&op_token);
 
             left = Expression::BinaryOp(Box::new(left), op_str, Box::new(right));
@@ -373,10 +394,10 @@ impl<'a> Parser<'a> {
             let inner = self.parse_not_condition();
             Condition::Not(Box::new(inner))
         } else if let Token::Symbol('(') = self.current {
-            self.advance(); // consume '('
-            let cond = self.parse_or_condition(); // recursive descent
-            self.expect(&Token::Symbol(')')); // expect ')'
-            Condition::Grouped(Box::new(cond)) // <--- Wrap it!
+            self.advance();
+            let cond = self.parse_or_condition();
+            self.expect(&Token::Symbol(')'));
+            Condition::Grouped(Box::new(cond))
         } else {
             Condition::Single(self.parse_comparison_expression())
         }
@@ -435,7 +456,12 @@ impl<'a> Parser<'a> {
                         })
                     }
                 } else {
-                    panic!("Expected '->' after loop variable in range-based loop");
+                    // panic!("Expected '->' after loop variable in range-based loop");
+                    self.advance();
+                    let mut condition = Vec::new();
+                    condition.push(self.parse_condition());
+                    let body = self.parse_block();
+                    Statement::Loop(LoopExpr::Condition { condition, body })
                 }
             }
             // Condition-based loop `loop condition { ... }`

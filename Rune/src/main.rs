@@ -69,7 +69,7 @@ fn main() {
         // }
         // "#,
         // r#"
-        // if (x == 3 || x == 5 && x == 10 || x == 15) {
+        // if x + 1 == 3 || x == 5 && x == 10 || x == 15 {
         // } elif another {
         // } elif {
         // } else {
@@ -82,7 +82,7 @@ fn main() {
         // int (string x, int y) {x + y}
         // "#,
         // r#"
-        // loop (x == 3 || x == 5 && x == 10 || x == 15) { 
+        // loop x == 3 && x == 5 || x == 7 { 
         //     int x = 5
         //     string y = x
         // }
@@ -119,7 +119,7 @@ fn main() {
         //     return x
         // }
         // "#,
-        //                r#"
+        // r#"
         // int (string x, int y) {
         //     int z = 4
         //      return x
@@ -145,9 +145,15 @@ fn main() {
         // list<int,float> f = [1,2]
         // list<int,float>(2) f = [1,2.0]        
         // "#,
+        // r#"
+        //  <int, float> x = 1      
+        // "#,
         r#"
-         <int, float> x = 1      
-        "#,
+         int x = 3 
+       "#,
+       r#"
+         int x >> 3
+     "#,
     ];
 
     for (i, source_code) in test_cases.iter().enumerate() {
