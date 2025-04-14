@@ -1,6 +1,6 @@
 use crate::lexer::{Lexer, Token,Operator,ComparisonOperator,LogicalOperator};
 use crate::ast::{
-    Type, Literal, Expression, Declaration, Program, Statement, IfExpr, LoopExpr,
+    Type, Literal, Expression, Declaration, Program, Statement, IfExpr, LoopExpr,ConditionExpr,
     Function, Parameter,Condition
 };
 
@@ -107,7 +107,7 @@ impl<'a> Parser<'a> {
 
     fn parse_declaration(&mut self) -> Statement {
         let var_type = self.parse_type();
-    
+
         let identifier = if let Token::Ident(name) = &self.current {
             let id = name.clone();
             self.advance();
@@ -177,7 +177,6 @@ impl<'a> Parser<'a> {
 
             // Union type: <int, string, float>
             Token::Operator(Operator::Comparison(ComparisonOperator::LessThan)) => {
-                print!("It reached here");
                 self.advance(); // consume '<'
                 let mut types = vec![self.parse_type()];
                 while let Token::Symbol(',') = self.current {
@@ -193,35 +192,68 @@ impl<'a> Parser<'a> {
                 self.advance(); // consume 'List'
                 self.expect(&Token::Operator(Operator::Comparison(ComparisonOperator::LessThan)));
 
-
-                let mut inner_types = vec![self.parse_type()];
-                while let Token::Symbol(',') = self.current {
-                    self.advance();
-                    inner_types.push(self.parse_type());
-                }
-
-                self.expect(&Token::Operator(Operator::Comparison(ComparisonOperator::GreaterThan)));
-
-                // Check if it's a fixed-length list like List<int>(3)
-                if let Token::Symbol('(') = self.current {
-                    self.advance();
-                    let size = if let Token::IntLiteral(n) = self.current {
-                        let val = n as usize;
+                let combinator: Option<String> = match &self.current {
+                    Token::Operator(Operator::Logical(LogicalOperator::And)) => {
                         self.advance();
-                        val
+                        Some("&&".to_string())
+                    }
+                    Token::Operator(Operator::Logical(LogicalOperator::Or)) => {
+                        self.advance();
+                        Some("||".to_string())
+                    }
+                    _ => None,
+                };
+
+                if let Some(op) = combinator {
+                    self.expect(&Token::Operator(Operator::Comparison(ComparisonOperator::GreaterThan)));
+
+                    if let Token::Symbol('(') = self.current {
+                        self.advance();
+                        let size = if let Token::IntLiteral(n) = self.current {
+                            let val = n as usize;
+                            self.advance();
+                            val
+                        } else {
+                            panic!("Expected list size in List<T>(n)");
+                        };
+                        self.expect(&Token::Symbol(')'));
+                        return Type::ConditionFixedList(op,size);
                     } else {
-                        panic!("Expected list size in List<T>(n)");
-                    };
-                    self.expect(&Token::Symbol(')'));
-                    Type::FixedList(inner_types, size)
+                        return Type::ConditionList(op);
+                    }
+
                 } else {
-                    Type::List(inner_types)
+                    let mut inner_types = vec![self.parse_type()];
+                    while let Token::Symbol(',') = self.current {
+                        self.advance();
+                        inner_types.push(self.parse_type());
+                    }
+    
+                    self.expect(&Token::Operator(Operator::Comparison(ComparisonOperator::GreaterThan)));
+    
+                    // Check if it's a fixed-length list like List<int>(3)
+                    if let Token::Symbol('(') = self.current {
+                        self.advance();
+                        let size = if let Token::IntLiteral(n) = self.current {
+                            let val = n as usize;
+                            self.advance();
+                            val
+                        } else {
+                            panic!("Expected list size in List<T>(n)");
+                        };
+                        self.expect(&Token::Symbol(')'));
+                        Type::FixedList(inner_types, size)
+                    } else {
+                        Type::List(inner_types)
+                    }
                 }
+
+               
             }
             _ => panic!("Expected type, found {:?}", self.current),
         }
     }
-
+    
     fn parse_expression(&mut self) -> Expression {
         match &self.current {
             Token::IntLiteral(n) => {
@@ -294,36 +326,11 @@ impl<'a> Parser<'a> {
             // Parse list literals (both curly and square brackets)
             Token::Symbol('{') | Token::Symbol('[') => {
                 let opening_brace = self.current.clone();
-                let mut elements = Vec::new();
-
                 // Consume the opening brace
                 self.advance();
 
                 // Parse the list elements until the closing brace or square bracket
-                loop {
-                    if let Token::Symbol('}') | Token::Symbol(']') = &self.current {
-                        // If it's a closing brace or bracket, stop parsing
-                        self.advance();
-                        break;
-                    }
-
-                    // Parse the expression for the list element
-                    let element = self.parse_expression();
-                    elements.push(element);
-
-                    // If there's a comma, skip it and continue parsing the next element
-                    if let Token::Symbol(',') = &self.current {
-                        self.advance();
-                    } else {
-                        // Otherwise, if we hit a closing brace/bracket, we're done
-                        if let Token::Symbol('}') | Token::Symbol(']') = &self.current {
-                            self.advance();
-                            break;
-                        } else {
-                            panic!("Expected a ',' or closing brace/bracket, found: {:?}", self.current);
-                        }
-                    }
-                }
+                let mut elements = self.parse_list_expression(|parser| parser.parse_expression());
 
                 // Create and return the list literal expression
                 let list_expr = Expression::Literal(Literal::List(elements));
@@ -331,6 +338,39 @@ impl<'a> Parser<'a> {
             }
             _ => panic!("Unexpected token in expression: {:?}", self.current),
         }
+    }
+
+    fn parse_list_expression<F>(&mut self, mut parse_fn: F) -> Vec<Expression>
+where
+    F: FnMut(&mut Parser) -> Expression,
+ {
+        let mut elements = Vec::new();
+        loop {
+            if let Token::Symbol('}') | Token::Symbol(']') = &self.current {
+                // If it's a closing brace or bracket, stop parsing
+                self.advance();
+                break;
+            }
+
+            // Parse the expression for the list element
+            let element = parse_fn(self);
+            elements.push(element);
+
+            // If there's a comma, skip it and continue parsing the next element
+            if let Token::Symbol(',') = &self.current {
+                self.advance();
+            } else {
+                // Otherwise, if we hit a closing brace/bracket, we're done
+                if let Token::Symbol('}') | Token::Symbol(']') = &self.current {
+                    self.advance();
+                    break;
+                } else {
+                    panic!("Expected a ',' or closing brace/bracket, found: {:?}", self.current);
+                }
+            }
+        }
+        return elements;
+
     }
 
     fn parse_comparison_expression(&mut self) -> Expression {
@@ -365,10 +405,33 @@ impl<'a> Parser<'a> {
     fn parse_if(&mut self) -> Statement {
         self.advance(); // consume 'if'
 
-        let mut conditions = Vec::new();
-        conditions.push(self.parse_condition());
-        let then_block = self.parse_block();
+        
+        let mut condition_expr;
 
+        if let Token::List(_) = self.current {
+            let var_type = self.parse_type();
+            match self.current {
+                Token::Symbol('{') | Token::Symbol('[') => {
+                    self.advance();
+                    let exprs = self.parse_list_expression(|parser| parser.parse_comparison_expression());
+                    let elements: Vec<Condition> = exprs.into_iter().map(Condition::Single).collect();   
+                    condition_expr = ConditionExpr::List{combinator: var_type, conditions: elements};                 
+
+                },
+                _ => {
+                    panic!(
+                        "Expected '{{' or '[' to start a condition list block, found: {:?}",
+                        self.current
+                    );
+                }
+            }
+        } else {
+            let mut conditions = Vec::new();
+            conditions.push(self.parse_condition()); 
+            condition_expr = ConditionExpr::Regular(conditions); 
+        } 
+
+        let then_block = self.parse_block();
         let mut elif_blocks = Vec::new();
         while let Token::Keyword(k) = &self.current {
             if k == "elif" {
@@ -401,7 +464,7 @@ impl<'a> Parser<'a> {
         };
 
         Statement::If(IfExpr {
-            conditions,
+            condition: condition_expr,
             then_block,
             elif_blocks,
             else_block,

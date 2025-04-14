@@ -31,13 +31,11 @@ fn main() {
         // } else {
         // }
         // "#,
-        // r#"
-        // if x + 1 == 3 || x == 5 && x == 10 || x == 15 {
-        // } elif another {
-        // } elif {
-        // } else {
-        // }
-        // "#,
+        r#"
+        if list<&&>{x == 1, x == 2 , x == 3, x == 7, x == 7, x == 7} {
+        
+        }
+        "#,
         // r#"
         // bool flag = true;
         // "#,
@@ -45,9 +43,8 @@ fn main() {
         // int (string x, int y) {x + y}
         // "#,
         // r#"
-        // loop x == 3 && x == 5 || x == 7 { 
-        //     int x = 5
-        //     string y = x
+        // loop x == 3 && x == 5 && x == 7 && x == 8 { 
+
         // }
         // "#,
         // r#"
@@ -105,11 +102,7 @@ fn main() {
         // }
         // "#,
         // r#"
-        // list<int,float> f = [1,2]
-        // list<int,float>(2) f = [1,2.0]        
-        // "#,
-        // r#"
-        //  <int, float> x = 1      
+        // var y = x != 1 
         // "#,
         r#"
          int x = 3 
@@ -126,7 +119,21 @@ fn main() {
         r#"
         char x = 'z'
         "#,
-
+        r#"
+        list<int>(3) f = {1, 2 ,3}    
+        "#,
+        r#"
+        list<&&>(3) f = {x == 1, x == 2 , x == 3}    
+        "#,
+       // r#"
+        //  <int, float> x = 1      
+        // "#,
+    //     r#"
+    //      int x = 3 
+    //    "#,
+    //    r#"
+    //      int x >> 3
+    //  "#,
     ];
 
     for (i, source_code) in test_cases.iter().enumerate() {
