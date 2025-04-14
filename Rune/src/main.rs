@@ -9,43 +9,6 @@ use crate::parser::Parser;
 fn main() {
     let test_cases = vec![
         // r#"
-        // int x = 5
-        // bool name = false
-        // "#,
-        // r#"
-        // if hello {
-        //     int y = 3
-        // }
-        // "#,
-        // r#"
-        // int a = 10
-        // if condition1,5 {
-        // } elif another {
-        // } elif {
-        // } else {
-        // }
-        // "#,
-        // r#"
-        // bool flag = true;
-        // "#,
-        // r#"
-        // loop { 
-        // }
-        // "#,
-        r#"
-        func int ayaan(int x, bool y = false) {
-            int z = 4
-            return x
-        }
-        "#,
-        // r#"
-        // int x = 4 + 3
-        // "#,
-    ];
-
-
-    let test_cases = vec![
-        // r#"
         // x == y
         // x > y
         // x < y
