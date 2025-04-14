@@ -9,7 +9,7 @@ pub enum Token {
     StringLiteral(String),
     BoolLiteral(bool),
     FloatLiteral(f64),
-    // CharLiteral(char),
+    CharLiteral(char),
     Keyword(String),
     Symbol(char),
     Operator(Operator),
@@ -20,6 +20,7 @@ pub enum Token {
     FloatType(String),
     BoolType(String),
     CharType(String),
+    ErrorType(String),
     RangeArrow,
     Eof,
     // Error(String),
@@ -162,12 +163,13 @@ impl<'a> Lexer<'a> {
                     return match ident.as_str() {
                         "true" => Token::BoolLiteral(true),
                         "false" => Token::BoolLiteral(false),
-                        "if" | "elif" | "else" | "loop" | "func" | "" | "return" => Token::Keyword(ident),
+                        "if" | "elif" | "else" | "loop" | "func" | "" | "return" | "do" => Token::Keyword(ident),
                         "string" => Token::StringType(ident),
                         "int" => Token::IntType(ident),
                         "float" => Token::FloatType(ident),
                         "bool" => Token::BoolType(ident),
                         "char" => Token::CharType(ident),
+                        "error" => Token::ErrorType(ident),
                         "list" => return Token::List(ident),
                         _ => Token::Ident(ident),
                     };
@@ -184,12 +186,19 @@ impl<'a> Lexer<'a> {
                     }
                     return Token::Assignment("=".into())
                 },
-                // '\'' => {
-                //     self.next_char();
-                //     let char_lit = self.consume_while(|c| c != '\'');
-                //     self.next_char();
-                //     return Token::CharLiteral(char_lit);
-                // },
+                '\'' => {
+                    self.next_char();
+                    let char_lit = self.consume_while(|c| c != '\'');
+                    self.next_char();
+                    
+                    // Check if the length is not exactly 1
+                    if char_lit.len() != 1 {
+                        panic!("Failed to parse char: {}", char_lit);
+                    }
+                    
+                    // Convert the string to a char and return the token
+                    return Token::CharLiteral(char_lit.chars().next().unwrap());
+                },
                 '"' => {
                     self.next_char();
                     let string_lit = self.consume_while(|c| c != '"');
@@ -264,7 +273,7 @@ impl<'a> Lexer<'a> {
                         return Token::Symbol(self.next_char().unwrap())
                     }
                 },
-                '{' | '}' | '(' | ')' | '[' | ']' | ',' | ':' => {
+                '{' | '}' | '(' | ')' | '[' | ']' | ',' | ':' | '`' => {
                     return Token::Symbol(self.next_char().unwrap())
                 },
                 _ => { self.next_char(); continue; }

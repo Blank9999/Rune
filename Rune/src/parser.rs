@@ -50,6 +50,11 @@ impl<'a> Parser<'a> {
                 let expr = self.parse_expression();
                 Statement::Return(expr)
             }
+            Token::Keyword(k) if k == "do" => {
+                self.advance();
+                let expr = self.parse_expression();
+                Statement::Do(expr)
+            }
             Token::Keyword(k) if k == "guard" => {
                 self.advance();
                 let cond = self.parse_expression();
@@ -111,21 +116,39 @@ impl<'a> Parser<'a> {
             panic!("Expected identifier, found {:?}", self.current);
         };
     
-        if let Token::InputToken = self.current {
+        if let Token::Assignment(_) = self.current {
             self.advance();
-            let expression = self.parse_expression(); // imma talk to ayaan about this
-            Statement::Input { var_type, identifier, expression }
     
-        } else if let Token::Assignment(_) = self.current {
-            self.advance();
+            // Check if the next token is the ">>" operator for input
+            if let Token::InputToken = &self.current {
+                self.advance();
+    
+                // Check if there is an optional string literal before the ">>"
+                let prompt = if let Token::StringLiteral(prompt) = &self.current {
+                    let prompt_str = prompt.clone();
+                    self.advance();
+                    Some(prompt_str)
+                } else {
+                    None
+                };
+    
+                // Return the input statement
+                return Statement::Input {
+                    var_type,
+                    identifier,
+                    prompt,
+                };
+            }
+    
+            // Otherwise, parse a regular expression
             let value = self.parse_expression();
-            Statement::Declaration(Declaration {
+            return Statement::Declaration(Declaration {
                 var_type,
                 identifier,
                 value,
-            })
+            });
         } else {
-            panic!("Expected: == or >>, found {:?}",self.current);
+            panic!("Expected '=', found {:?}", self.current);
         }
     }
 
@@ -200,7 +223,6 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_expression(&mut self) -> Expression {
-        println!("IT reached expression");
         match &self.current {
             Token::IntLiteral(n) => {
                 let lit = Literal::Int(*n);
@@ -222,10 +244,51 @@ impl<'a> Parser<'a> {
                 self.advance();
                 Expression::Literal(lit)
             }
+            Token::CharLiteral(c) => {
+                let lit = Literal::Char(*c);
+                self.advance();
+                Expression::Literal(lit)
+            }
             Token::Ident(name) => {
                 let id = name.clone();
                 self.advance();
                 Expression::Identifier(id)
+            }
+
+            Token::Symbol('`') => {
+                self.advance(); // Skip the opening backtick
+                let mut static_parts = Vec::new();
+                let mut expressions = Vec::new();
+    
+                loop {
+                    match &self.current {
+                        Token::Symbol('`') => {
+                            self.advance(); // Skip the closing backtick
+                            break;
+                        },
+                        Token::Symbol('{') => {
+                            self.advance(); // Skip the opening curly brace
+                            let expr = self.parse_expression();
+                            expressions.push(expr);
+    
+                            // Expect the closing curly brace
+                            if let Token::Symbol('}') = &self.current {
+                                self.advance(); // Skip the closing curly brace
+                            } else {
+                                panic!("Expected '}}', found {:?}", self.current);
+                            }
+                        },
+                        Token::Ident(s) => {
+                            static_parts.push(s.clone());
+                            self.advance();
+                        },
+                        _ => {
+                            panic!("Unexpected token inside interpolated string: {:?}", self.current);
+                        }
+                    }
+                }
+    
+                Expression::InterpolatedString(static_parts, expressions)
             }
 
             // Parse list literals (both curly and square brackets)

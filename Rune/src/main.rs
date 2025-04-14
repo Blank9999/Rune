@@ -152,8 +152,18 @@ fn main() {
          int x = 3 
        "#,
        r#"
-         int x >> 3
-     "#,
+         int x = >> "Pick a number: " 
+         << 3 << x
+        "#,
+        r#"
+        do `hello{pet}bye{pet2}`
+        string y = `hello{pet}bye{pet2}`
+        do y
+        "#,
+        r#"
+        char x = 'z'
+        "#,
+
     ];
 
     for (i, source_code) in test_cases.iter().enumerate() {

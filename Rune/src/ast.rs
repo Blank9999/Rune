@@ -5,6 +5,7 @@ pub enum Type {
     Bool,
     Float,
     Char,
+    Error,
     Custom(String), // for things like List<int>
 
     List(Vec<Type>), // Dynamic list of allowed types
@@ -31,7 +32,9 @@ pub enum Expression {
     BinaryOp(Box<Expression>, String, Box<Expression>),
     UnaryOp(String, Box<Expression>),
     FunctionCall { name: String, args: Vec<Expression> },
+    InputOp(Box<Expression>),
     InterpolatedCall(String, Vec<Expression>), // for `create{pet}()`
+    InterpolatedString(Vec<String>, Vec<Expression>), // New variant for interpolated strings
 }
 
 #[derive(Debug)]
@@ -106,8 +109,9 @@ pub enum Statement {
     Function(Function),
     Return(Expression),
     Guard(Expression), // this is just a statement that should break the loop
-    Input { var_type: Type, identifier: String, expression: Expression }, 
+    Input { var_type: Type, identifier: String, prompt: Option<String> },
     Output(Expression),
+    Do(Expression),
 }
 
 #[derive(Debug)]
