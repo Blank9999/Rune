@@ -6,11 +6,12 @@ pub enum Type {
     Float,
     Char,
     Custom(String), // for things like List<int>
-
     List(Vec<Type>), // Dynamic list of allowed types
     FixedList(Vec<Type>, usize), // Fixed-length list
-    ConditionList(Vec<Condition>),
-    ConditionFixedList(Vec<Condition>,usize),
+    ConditionList(String),
+    ConditionFixedList(String,usize),
+    // ConditionList(Vec<Condition>),
+    // ConditionFixedList(Vec<Condition>,usize),
     Union(Vec<Type>), // Union of types like <int, string>
 }
 
@@ -32,6 +33,7 @@ pub enum Expression {
     UnaryOp(String, Box<Expression>),
     FunctionCall { name: String, args: Vec<Expression> },
     InterpolatedCall(String, Vec<Expression>), // for `create{pet}()`
+    ConditionList(Vec<Condition>),
 }
 
 #[derive(Debug)]
@@ -66,9 +68,20 @@ pub struct Function {
 }
 
 #[derive(Debug)]
+pub enum ConditionExpr {
+    Regular(Vec<Condition>), // For classic condition chains like a && b || c
+    List {
+        combinator: Type,       // "&&" or "||"
+        conditions: Vec<Condition>,
+    },
+}
+
+#[derive(Debug)]
 pub struct IfExpr {
     // pub conditions: Vec<Expression>,
-    pub conditions: Vec<Condition>,
+    // pub conditions: Vec<Condition>,
+    pub condition: ConditionExpr,
+
     pub then_block: Vec<Statement>,
     pub elif_blocks: Vec<(Vec<Expression>, Vec<Statement>)>,
     pub else_block: Option<Vec<Statement>>,
