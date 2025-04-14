@@ -115,9 +115,45 @@ impl<'a> Parser<'a> {
         } else {
             panic!("Expected identifier, found {:?}", self.current);
         };
+
+        
     
         if let Token::Assignment(_) = self.current {
             self.advance();
+            // println!("The var type is {:?}",var_type);
+            // println!("The cur is {:?}",self.current);
+            match &var_type {
+                Type::ConditionList(combinator) |
+            Type::ConditionFixedList(combinator, _) => {
+    
+                self.expect(&Token::Assignment("=".to_string()));
+                // `expect` already advances if successful
+                
+
+        
+                match self.current {
+                    Token::Symbol('{') | Token::Symbol('[') => {
+                        self.advance();
+                        let exprs = self.parse_list_expression(|parser| parser.parse_comparison_expression());
+                        let conditions: Vec<Condition> = exprs.into_iter().map(Condition::Single).collect(); 
+                        return Statement::Declaration(Declaration {
+                            var_type: var_type,
+                            identifier,
+                            value: Expression::ConditionList((conditions)),
+                        });
+                    }
+                    _ => {
+                        panic!(
+                            "Expected '{{' or '[' to start a condition list block, found: {:?}",
+                            self.current
+                        );
+                    }
+                }
+            }
+                _ => {
+                    // Handle other types of var_type here or let it continue
+                }
+            }
     
             // Check if the next token is the ">>" operator for input
             if let Token::InputToken = &self.current {
