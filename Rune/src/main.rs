@@ -31,11 +31,11 @@ fn main() {
         // } else {
         // }
         // "#,
-        r#"
-        if list<&&>{x == 1, x == 2 , x == 3, x == 7, x == 7, x == 7} {
+        // r#"
+        // if list<&&>{x == 1, x == 2 , x == 3, x == 7, x == 7, x == 7} {
         
-        }
-        "#,
+        // }
+        // "#,
         // r#"
         // bool flag = true;
         // "#,
@@ -104,26 +104,26 @@ fn main() {
         // r#"
         // var y = x != 1 
         // "#,
+    //     r#"
+    //      int x = 3 
+    //    "#,
+    //    r#"
+    //      int x = >> "Pick a number: " 
+    //      << 3 << x
+    //     "#,
+    //     r#"
+    //     do `hello{pet}bye{pet2}`
+    //     string y = `hello{pet}bye{pet2}`
+    //     do y
+    //     "#,
+    //     r#"
+    //     char x = 'z'
+    //     "#,
+        // r#"
+        // list<int>(3) f = {1, 2 ,3}    
+        // "#,
         r#"
-         int x = 3 
-       "#,
-       r#"
-         int x = >> "Pick a number: " 
-         << 3 << x
-        "#,
-        r#"
-        do `hello{pet}bye{pet2}`
-        string y = `hello{pet}bye{pet2}`
-        do y
-        "#,
-        r#"
-        char x = 'z'
-        "#,
-        r#"
-        list<int>(3) f = {1, 2 ,3}    
-        "#,
-        r#"
-        list<&&>(3) f = {x == 1, x == 2 , x == 3}    
+        list<&&> f = {x == 1, x == 2 , x == 3}    
         "#,
        // r#"
         //  <int, float> x = 1      
