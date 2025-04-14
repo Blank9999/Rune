@@ -117,49 +117,18 @@ impl<'a> Parser<'a> {
     
                 self.expect(&Token::Assignment("=".to_string()));
                 // `expect` already advances if successful
+                
+
         
                 match self.current {
                     Token::Symbol('{') | Token::Symbol('[') => {
                         self.advance();
-                        let mut conditions = Vec::new();
-        
-                        loop {
-                            match &self.current {
-                                Token::Symbol('}') | Token::Symbol(']') => {
-                                    self.advance();
-                                    break;
-                                }
-                                _ => {
-                                    // Parse condition
-                                    let condition = Condition::Single(self.parse_comparison_expression());
-                                    conditions.push(condition);
-        
-                                    println!("the current in the loop is {:?}", self.current);
-                                    println!("the peek from the loop is {:?}", self.peek());
-        
-                                    match &self.current {
-                                        Token::Symbol(',') => {
-                                            self.advance();
-                                        }
-                                        Token::Symbol('}') | Token::Symbol(']') => {
-                                            self.advance();
-                                            break;
-                                        }
-                                        _ => {
-                                            panic!(
-                                                "Expected ',' or closing brace/bracket, found: {:?}",
-                                                self.current
-                                            );
-                                        }
-                                    }
-                                }
-                            }
-                        }
-        
+                        let exprs = self.parse_list_expression(|parser| parser.parse_comparison_expression());
+                        let conditions: Vec<Condition> = exprs.into_iter().map(Condition::Single).collect(); 
                         return Statement::Declaration(Declaration {
                             var_type: var_type,
                             identifier,
-                            value: Expression::ConditionList(conditions),
+                            value: Expression::ConditionList((conditions)),
                         });
                     }
                     _ => {
@@ -264,44 +233,38 @@ impl<'a> Parser<'a> {
                         return Type::ConditionList(op);
                     }
 
-                    // return Type::ConditionList(op);
-
                 } else {
-                    println!("No combinator found");
-                }
-
-                let mut inner_types = vec![self.parse_type()];
-                while let Token::Symbol(',') = self.current {
-                    self.advance();
-                    inner_types.push(self.parse_type());
-                }
-
-                self.expect(&Token::Operator(Operator::Comparison(ComparisonOperator::GreaterThan)));
-
-                // Check if it's a fixed-length list like List<int>(3)
-                if let Token::Symbol('(') = self.current {
-                    self.advance();
-                    let size = if let Token::IntLiteral(n) = self.current {
-                        let val = n as usize;
+                    let mut inner_types = vec![self.parse_type()];
+                    while let Token::Symbol(',') = self.current {
                         self.advance();
-                        val
+                        inner_types.push(self.parse_type());
+                    }
+    
+                    self.expect(&Token::Operator(Operator::Comparison(ComparisonOperator::GreaterThan)));
+    
+                    // Check if it's a fixed-length list like List<int>(3)
+                    if let Token::Symbol('(') = self.current {
+                        self.advance();
+                        let size = if let Token::IntLiteral(n) = self.current {
+                            let val = n as usize;
+                            self.advance();
+                            val
+                        } else {
+                            panic!("Expected list size in List<T>(n)");
+                        };
+                        self.expect(&Token::Symbol(')'));
+                        Type::FixedList(inner_types, size)
                     } else {
-                        panic!("Expected list size in List<T>(n)");
-                    };
-                    self.expect(&Token::Symbol(')'));
-                    Type::FixedList(inner_types, size)
-                } else {
-                    Type::List(inner_types)
+                        Type::List(inner_types)
+                    }
                 }
+
+               
             }
             _ => panic!("Expected type, found {:?}", self.current),
         }
     }
-
-    // fn parse_condition_type((&mut self)) -> Type {
-
-    // } 
-
+    
     fn parse_expression(&mut self) -> Expression {
         // println!("IT reached expression");
         match &self.current {
@@ -334,36 +297,11 @@ impl<'a> Parser<'a> {
             // Parse list literals (both curly and square brackets)
             Token::Symbol('{') | Token::Symbol('[') => {
                 let opening_brace = self.current.clone();
-                let mut elements = Vec::new();
-
                 // Consume the opening brace
                 self.advance();
 
                 // Parse the list elements until the closing brace or square bracket
-                loop {
-                    if let Token::Symbol('}') | Token::Symbol(']') = &self.current {
-                        // If it's a closing brace or bracket, stop parsing
-                        self.advance();
-                        break;
-                    }
-
-                    // Parse the expression for the list element
-                    let element = self.parse_expression();
-                    elements.push(element);
-
-                    // If there's a comma, skip it and continue parsing the next element
-                    if let Token::Symbol(',') = &self.current {
-                        self.advance();
-                    } else {
-                        // Otherwise, if we hit a closing brace/bracket, we're done
-                        if let Token::Symbol('}') | Token::Symbol(']') = &self.current {
-                            self.advance();
-                            break;
-                        } else {
-                            panic!("Expected a ',' or closing brace/bracket, found: {:?}", self.current);
-                        }
-                    }
-                }
+                let mut elements = self.parse_list_expression(|parser| parser.parse_expression());
 
                 // Create and return the list literal expression
                 let list_expr = Expression::Literal(Literal::List(elements));
@@ -371,6 +309,39 @@ impl<'a> Parser<'a> {
             }
             _ => panic!("Unexpected token in expression: {:?}", self.current),
         }
+    }
+
+    fn parse_list_expression<F>(&mut self, mut parse_fn: F) -> Vec<Expression>
+where
+    F: FnMut(&mut Parser) -> Expression,
+ {
+        let mut elements = Vec::new();
+        loop {
+            if let Token::Symbol('}') | Token::Symbol(']') = &self.current {
+                // If it's a closing brace or bracket, stop parsing
+                self.advance();
+                break;
+            }
+
+            // Parse the expression for the list element
+            let element = parse_fn(self);
+            elements.push(element);
+
+            // If there's a comma, skip it and continue parsing the next element
+            if let Token::Symbol(',') = &self.current {
+                self.advance();
+            } else {
+                // Otherwise, if we hit a closing brace/bracket, we're done
+                if let Token::Symbol('}') | Token::Symbol(']') = &self.current {
+                    self.advance();
+                    break;
+                } else {
+                    panic!("Expected a ',' or closing brace/bracket, found: {:?}", self.current);
+                }
+            }
+        }
+        return elements;
+
     }
 
     fn parse_comparison_expression(&mut self) -> Expression {
@@ -413,35 +384,8 @@ impl<'a> Parser<'a> {
             match self.current {
                 Token::Symbol('{') | Token::Symbol('[') => {
                     self.advance();
-                    let mut elements = Vec::new();
-                    loop {
-                        match &self.current {
-                            Token::Symbol('}') | Token::Symbol(']') => {
-                                self.advance();
-                                break;
-                            }
-
-                            _ => {
-                                let element = Condition::Single(self.parse_comparison_expression());
-                                elements.push(element);
-                                match &self.current {
-                                    Token::Symbol(',') => {
-                                        self.advance();
-                                    }
-                                    Token::Symbol('}') | Token::Symbol(']') => {
-                                        self.advance();
-                                        break;
-                                    }
-                                    _ => {
-                                        panic!(
-                                            "Expected ',' or closing brace/bracket, found: {:?}",
-                                            self.current
-                                        );
-                                    }
-                                }
-                            }
-                        }
-                    }   
+                    let exprs = self.parse_list_expression(|parser| parser.parse_comparison_expression());
+                    let elements: Vec<Condition> = exprs.into_iter().map(Condition::Single).collect();   
                     condition_expr = ConditionExpr::List{combinator: var_type, conditions: elements};                 
 
                 },
