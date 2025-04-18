@@ -138,6 +138,7 @@ impl<'a> Lexer<'a> {
         if let Some(token) = self.peeked_token.take() {
             return token;
         }
+        // let mut x = 0;
 
         while let Some(&ch) = self.peek_char() {
             match ch {
@@ -230,7 +231,8 @@ impl<'a> Lexer<'a> {
                     if let Some('=') = self.peek_char() {
                         self.next_char();
                         return Token::Operator(Operator::Comparison(ComparisonOperator::GreaterThanOrEqual));
-                    } else if let Some('>') = self.peek_char() {
+                    }             
+                    else if let Some('>') = self.peek_char() {
                         self.next_char();
                         return Token::InputToken;
                     }
@@ -241,10 +243,12 @@ impl<'a> Lexer<'a> {
                     if let Some('=') = self.peek_char() {
                         self.next_char();
                         return Token::Operator(Operator::Comparison(ComparisonOperator::LessThanOrEqual));
-                    } else if let Some('<') = self.peek_char() {
+                    }
+                    
+                     else if let Some('<') = self.peek_char() {
                         self.next_char();
                         return Token::OutputToken;
-                    }
+                    } 
                     return Token::Operator(Operator::Comparison(ComparisonOperator::LessThan));
                 },
                 '!' => {

@@ -32,7 +32,7 @@ fn main() {
         // }
         // "#,
         // r#"
-        // if list<&&>{x == 1, x == 2 , x == 3, x == 7, x == 7, x == 7} {
+        // if list<int>{x == 1, x == 2 , x == 3, x == 7, x == 7, x == 7} || x == 0 {
         
         // }
         // "#,
@@ -46,7 +46,7 @@ fn main() {
         // loop x == 3 && x == 5 && x == 7 && x == 8 { 
 
         // }
-        // "#,
+        //  "#,
         // r#"
         // loop { 
         //     int x = 5
@@ -119,21 +119,21 @@ fn main() {
     //     r#"
     //     char x = 'z'
     //     "#,
-        // r#"
-        // list<int>(3) f = {1, 2 ,3}    
-        // "#,
         r#"
-        list<&&> f = {x == 1, x == 2 , x == 3}    
+        list<int,list<string>> f = {1, 2 ,3}    
         "#,
+        // r#"
+        // list<int>(5) f = {x == 1, x == 2 , x == 3}    
+        // "#,
        // r#"
         //  <int, float> x = 1      
         // "#,
     //     r#"
-    //      int x = 3 
+    //      bool a = list<||>{x == 1, x == 2 , x == 3}    
     //    "#,
-    //    r#"
-    //      int x >> 3
-    //  "#,
+       r#"
+         int x = >>
+     "#,
     ];
 
     for (i, source_code) in test_cases.iter().enumerate() {

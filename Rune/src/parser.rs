@@ -129,8 +129,6 @@ impl<'a> Parser<'a> {
                 self.expect(&Token::Assignment("=".to_string()));
                 // `expect` already advances if successful
                 
-
-        
                 match self.current {
                     Token::Symbol('{') | Token::Symbol('[') => {
                         self.advance();
