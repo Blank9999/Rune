@@ -163,10 +163,7 @@ impl<'a> Lexer<'a> {
                 },
                 'a'..='z' | 'A'..='Z' | '_' => {
                     let ident = self.consume_while(|c| c.is_alphanumeric() || c == '_');
-                    if ident.as_str() == "list" {
-                        self.in_list += 1;
-                        return Token::List(ident);
-                    }
+
                     return match ident.as_str() {
                         "true" => Token::BoolLiteral(true),
                         "false" => Token::BoolLiteral(false),
@@ -177,7 +174,10 @@ impl<'a> Lexer<'a> {
                         "bool" => Token::BoolType(ident),
                         "char" => Token::CharType(ident),
                         "error" => Token::ErrorType(ident),
-                        "list" => Token::List(ident),
+                        "list" => {
+                            self.in_list += 1;
+                            Token::List(ident)
+                        },
                         _ => Token::Ident(ident),
                     };
                 },
