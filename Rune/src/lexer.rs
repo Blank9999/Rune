@@ -90,6 +90,7 @@ impl fmt::Display for ComparisonOperator {
 pub struct Lexer<'a> {
     input: Peekable<Chars<'a>>,
     peeked_token: Option<Token>,
+    in_list: usize,
 }
 
 impl<'a> Lexer<'a> {
@@ -97,6 +98,7 @@ impl<'a> Lexer<'a> {
         Self { 
             input: input.chars().peekable(),
             peeked_token: None,
+            in_list: 0,
         }
     }
     
@@ -141,6 +143,7 @@ impl<'a> Lexer<'a> {
         // let mut x = 0;
 
         while let Some(&ch) = self.peek_char() {
+            // println!("inList: {}", self.in_list);
             match ch {
                 ' ' | '\t' | '\n' | '\r' => { self.next_char(); continue; }
                 '0'..='9' => {
@@ -161,6 +164,10 @@ impl<'a> Lexer<'a> {
                 },
                 'a'..='z' | 'A'..='Z' | '_' => {
                     let ident = self.consume_while(|c| c.is_alphanumeric() || c == '_');
+                    if ident.as_str() == "list" {
+                        self.in_list += 1;
+                        return Token::List(ident);
+                    }
                     return match ident.as_str() {
                         "true" => Token::BoolLiteral(true),
                         "false" => Token::BoolLiteral(false),
@@ -171,7 +178,7 @@ impl<'a> Lexer<'a> {
                         "bool" => Token::BoolType(ident),
                         "char" => Token::CharType(ident),
                         "error" => Token::ErrorType(ident),
-                        "list" => return Token::List(ident),
+                        "list" => Token::List(ident),
                         _ => Token::Ident(ident),
                     };
                 },
@@ -228,13 +235,18 @@ impl<'a> Lexer<'a> {
                 },
                 '>' => {
                     self.next_char();
+                    if self.in_list > 0 { 
+                        self.in_list -= 1;
+                        return Token::Operator(Operator::Comparison(ComparisonOperator::GreaterThan));
+                    }
+
                     if let Some('=') = self.peek_char() {
                         self.next_char();
                         return Token::Operator(Operator::Comparison(ComparisonOperator::GreaterThanOrEqual));
                     }             
                     else if let Some('>') = self.peek_char() {
                         self.next_char();
-                        return Token::InputToken;
+                        return Token::InputToken; 
                     }
                     return Token::Operator(Operator::Comparison(ComparisonOperator::GreaterThan));
                 },

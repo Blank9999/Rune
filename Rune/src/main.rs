@@ -121,6 +121,19 @@ fn main() {
     //     "#,
         r#"
         list<int,list<string>> f = {1, 2 ,3}    
+        // r#"
+        // list<int>(3) f = {1, 2 ,3}    
+        // "#,
+        // r#"
+        // if list<&&>{x == 1, x == 2 , x == 3} || x == 3 {
+        // }  
+        // "#,
+        // r#"
+        // if x == list<int>{1, 2, 3}{
+        // }  
+        // "#,
+        r#"
+        list<int, list<int, list<int>>> x = [3, [4, 5]]
         "#,
         // r#"
         // list<int>(5) f = {x == 1, x == 2 , x == 3}    
