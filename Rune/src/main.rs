@@ -130,9 +130,9 @@ fn main() {
         // if x == list<int>{1, 2, 3}{
         // }  
         // "#,
-        r#"
-        list<int, list<int, list<int>>> x = [3, [4, 5]]
-        "#,
+        // r#"
+        // list<int, list<int, list<int>>> x = [3, [4, 5]]
+        // "#,
        // r#"
         //  <int, float> x = 1      
         // "#,
@@ -140,8 +140,11 @@ fn main() {
     //      int x = 3 
     //    "#,
     //    r#"
-    //      int x >> 3
+    //      int x = >> 
     //  "#,
+        r#"
+        
+        "#,
     ];
 
     for (i, source_code) in test_cases.iter().enumerate() {
