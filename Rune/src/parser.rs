@@ -142,7 +142,6 @@ impl<'a> Parser<'a> {
 
             if let Type::Bool | Type::ConditionList(_) = &var_type  {
                 if !matches!(&self.current, Token::BoolLiteral(_)) {
-                    println!("It reached here for the not bool literal statment");
                     let mut conditions = Vec::new();
                     let value = self.parse_condition();
                     conditions.push(value);
@@ -452,11 +451,6 @@ where
     }
 
     pub fn parse_condition(&mut self) -> Condition {
-        // self.expect(&Token::Symbol('('));
-        // let cond = self.parse_or_condition();
-        // self.expect(&Token::Symbol(')'));
-        // cond
-
         if let Token::Symbol('(') = &self.current {
             // Handle the case where the condition is inside parentheses
             self.advance(); // Consume '('
