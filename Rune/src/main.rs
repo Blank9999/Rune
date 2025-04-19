@@ -141,15 +141,15 @@ fn main() {
        // r#"
         //  <int, float> x = 1      
         // "#,
-    //     r#"
-    //      bool a = list<||>{x == 1, x == 2 , x == 3, x == 7, x == 7, x == 7} || x == 0
-    //    "#,
-    //    r#"
-    //    bool a = false
-    //  "#,
-//      r#"
-//      list<||> a = list<||>{x == 1, x == 2 , x == 3, x == 7, x == 7, x == 7}
-//    "#,
+        r#"
+         bool a = list<||>{x == 1, x == 2 , x == 3, x == 7, x == 7, x == 7} || x == 0
+       "#,
+       r#"
+       bool a = false
+     "#,
+     r#"
+     list<||> a = list<||>{x == 1, x == 2 , x == 3, x == 7, x == 7, x == 7}
+   "#,
     r#"
     bool a = list<||>{x == 1, x == 2 , x == 3, x == 7, x == 7, x == 7}
  "#,
