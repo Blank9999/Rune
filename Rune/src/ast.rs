@@ -5,10 +5,14 @@ pub enum Type {
     Bool,
     Float,
     Char,
+    Error,
     Custom(String), // for things like List<int>
-
     List(Vec<Type>), // Dynamic list of allowed types
     FixedList(Vec<Type>, usize), // Fixed-length list
+    ConditionList(String),
+    ConditionFixedList(String,usize),
+    // ConditionList(Vec<Condition>),
+    // ConditionFixedList(Vec<Condition>,usize),
     Union(Vec<Type>), // Union of types like <int, string>
 }
 
@@ -27,8 +31,22 @@ pub enum Expression {
     Literal(Literal),
     Identifier(String),
     BinaryOp(Box<Expression>, String, Box<Expression>),
+    UnaryOp(String, Box<Expression>),
     FunctionCall { name: String, args: Vec<Expression> },
+    InputOp(Box<Expression>),
     InterpolatedCall(String, Vec<Expression>), // for `create{pet}()`
+    InterpolatedString(Vec<String>, Vec<Expression>), // New variant for interpolated strings
+    // Condition(Condition),
+    ConditionList(Vec<Condition>),
+}
+
+#[derive(Debug)]
+pub enum Condition {
+    Single(Expression),
+    And(Box<Condition>, Box<Condition>),
+    Or(Box<Condition>, Box<Condition>),
+    Not(Box<Condition>),
+    Grouped(Box<Condition>),
 }
 
 #[derive(Debug)]
@@ -55,9 +73,9 @@ pub struct Function {
 
 #[derive(Debug)]
 pub struct IfExpr {
-    pub conditions: Vec<Expression>,
+    pub condition: Condition,
     pub then_block: Vec<Statement>,
-    pub elif_blocks: Vec<(Vec<Expression>, Vec<Statement>)>,
+    pub elif_blocks: Vec<(Condition, Vec<Statement>)>,
     pub else_block: Option<Vec<Statement>>,
 }
 
@@ -79,7 +97,7 @@ pub enum LoopExpr {
         body: Vec<Statement>,
     },
     Condition { // loop x < 3 {}
-        condition: Expression,
+        condition: Vec<Condition>,
         body: Vec<Statement>,
     },
 }
@@ -93,6 +111,9 @@ pub enum Statement {
     Function(Function),
     Return(Expression),
     Guard(Expression), // this is just a statement that should break the loop
+    Input { var_type: Type, identifier: String, prompt: Option<String> },
+    Output(Expression),
+    Do(Expression),
 }
 
 #[derive(Debug)]

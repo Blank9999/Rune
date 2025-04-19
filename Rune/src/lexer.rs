@@ -1,5 +1,6 @@
 use std::str::Chars;
 use std::iter::Peekable;
+use std::fmt;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Token {
@@ -19,29 +20,77 @@ pub enum Token {
     FloatType(String),
     BoolType(String),
     CharType(String),
+    ErrorType(String),
     RangeArrow,
-    Equality,
     Eof,
-    Error(String),
+    // Error(String),
+    InputToken,
+    OutputToken,
 }
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Operator {
-    Arithmetic(ArithmeticOperator)
+    Arithmetic(ArithmeticOperator),
+    Comparison(ComparisonOperator),
+    Logical(LogicalOperator),
+
 }
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum ArithmeticOperator {
-    Add,
-    Subtract,
-    Multiply,
-    Divide,
+    Add, // +
+    Subtract, // -
+    Multiply, // *
+    Divide, // /
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum ComparisonOperator {
+    Equal,     // "=="
+    NotEqual,  // "!="
+    LessThan,  // <
+    GreaterThan, // ">"
+    LessThanOrEqual, // <= 
+    GreaterThanOrEqual, // ">="
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum LogicalOperator {
+    And,       // "&&"
+    Or,        // "||"
+    Not,      // !
+}
+
+
+impl fmt::Display for LogicalOperator {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            LogicalOperator::And => write!(f, "&&"),
+            LogicalOperator::Or => write!(f, "||"),
+            LogicalOperator::Not => write!(f, "!"),
+        }
+    }
+}
+
+// For ComparisonOperator
+impl fmt::Display for ComparisonOperator {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            ComparisonOperator::Equal => write!(f, "=="),
+            ComparisonOperator::NotEqual => write!(f, "!="),
+            ComparisonOperator::LessThan => write!(f, "<"),
+            ComparisonOperator::GreaterThan => write!(f, ">"),
+            ComparisonOperator::LessThanOrEqual => write!(f, "<="),
+            ComparisonOperator::GreaterThanOrEqual => write!(f, ">="),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
 pub struct Lexer<'a> {
     input: Peekable<Chars<'a>>,
     peeked_token: Option<Token>,
+    in_list: usize,
 }
 
 impl<'a> Lexer<'a> {
@@ -49,6 +98,7 @@ impl<'a> Lexer<'a> {
         Self { 
             input: input.chars().peekable(),
             peeked_token: None,
+            in_list: 0,
         }
     }
     
@@ -90,8 +140,10 @@ impl<'a> Lexer<'a> {
         if let Some(token) = self.peeked_token.take() {
             return token;
         }
+        // let mut x = 0;
 
         while let Some(&ch) = self.peek_char() {
+            // println!("inList: {}", self.in_list);
             match ch {
                 ' ' | '\t' | '\n' | '\r' => { self.next_char(); continue; }
                 '0'..='9' => {
@@ -112,16 +164,21 @@ impl<'a> Lexer<'a> {
                 },
                 'a'..='z' | 'A'..='Z' | '_' => {
                     let ident = self.consume_while(|c| c.is_alphanumeric() || c == '_');
+
                     return match ident.as_str() {
                         "true" => Token::BoolLiteral(true),
                         "false" => Token::BoolLiteral(false),
-                        "if" | "elif" | "else" | "loop" | "func" | "" | "return" => Token::Keyword(ident),
+                        "if" | "elif" | "else" | "loop" | "func" | "" | "return" | "do" => Token::Keyword(ident),
                         "string" => Token::StringType(ident),
                         "int" => Token::IntType(ident),
                         "float" => Token::FloatType(ident),
                         "bool" => Token::BoolType(ident),
                         "char" => Token::CharType(ident),
-                        "list" => return Token::List(ident),
+                        "error" => Token::ErrorType(ident),
+                        "list" => {
+                            self.in_list += 1;
+                            Token::List(ident)
+                        },
                         _ => Token::Ident(ident),
                     };
                 },
@@ -133,16 +190,23 @@ impl<'a> Lexer<'a> {
                     self.next_char();
                     if let Some('=') = self.peek_char() {
                         self.next_char();
-                        return Token::Equality;
+                        return Token::Operator(Operator::Comparison(ComparisonOperator::Equal))
                     }
                     return Token::Assignment("=".into())
                 },
-                // '\'' => {
-                //     self.next_char();
-                //     let char_lit = self.consume_while(|c| c != '\'');
-                //     self.next_char();
-                //     return Token::CharLiteral(char_lit);
-                // },
+                '\'' => {
+                    self.next_char();
+                    let char_lit = self.consume_while(|c| c != '\'');
+                    self.next_char();
+                    
+                    // Check if the length is not exactly 1
+                    if char_lit.len() != 1 {
+                        panic!("Failed to parse char: {}", char_lit);
+                    }
+                    
+                    // Convert the string to a char and return the token
+                    return Token::CharLiteral(char_lit.chars().next().unwrap());
+                },
                 '"' => {
                     self.next_char();
                     let string_lit = self.consume_while(|c| c != '"');
@@ -169,7 +233,63 @@ impl<'a> Lexer<'a> {
                     self.next_char();
                     return Token::Operator(Operator::Arithmetic(ArithmeticOperator::Divide))
                 },
-                '{' | '}' | '(' | ')' | '[' | ']' | ',' | ':' | '<' | '>' => {
+                '>' => {
+                    self.next_char();
+                    if self.in_list > 0 { 
+                        self.in_list -= 1;
+                        return Token::Operator(Operator::Comparison(ComparisonOperator::GreaterThan));
+                    }
+
+                    if let Some('=') = self.peek_char() {
+                        self.next_char();
+                        return Token::Operator(Operator::Comparison(ComparisonOperator::GreaterThanOrEqual));
+                    }             
+                    else if let Some('>') = self.peek_char() {
+                        self.next_char();
+                        return Token::InputToken; 
+                    }
+                    return Token::Operator(Operator::Comparison(ComparisonOperator::GreaterThan));
+                },
+                '<' => {
+                    self.next_char();
+                    if let Some('=') = self.peek_char() {
+                        self.next_char();
+                        return Token::Operator(Operator::Comparison(ComparisonOperator::LessThanOrEqual));
+                    }
+                    
+                     else if let Some('<') = self.peek_char() {
+                        self.next_char();
+                        return Token::OutputToken;
+                    } 
+                    return Token::Operator(Operator::Comparison(ComparisonOperator::LessThan));
+                },
+                '!' => {
+                    self.next_char();
+                    if let Some('=') = self.peek_char() {
+                        self.next_char();
+                        return Token::Operator(Operator::Comparison(ComparisonOperator::NotEqual));
+                    }
+                    return Token::Operator(Operator::Logical(LogicalOperator::Not))
+                },
+                '|' => {
+                    self.next_char();
+                    if let Some('|') = self.peek_char() {
+                        self.next_char();
+                        return Token::Operator(Operator::Logical(LogicalOperator::Or));
+                    } else {
+                        return Token::Symbol(self.next_char().unwrap())
+                    }
+                },
+                '&' => {
+                    self.next_char();
+                    if let Some('&') = self.peek_char() {
+                        self.next_char();
+                        return Token::Operator(Operator::Logical(LogicalOperator::And));
+                    } else {
+                        return Token::Symbol(self.next_char().unwrap())
+                    }
+                },
+                '{' | '}' | '(' | ')' | '[' | ']' | ',' | ':' | '`' => {
                     return Token::Symbol(self.next_char().unwrap())
                 },
                 _ => { self.next_char(); continue; }

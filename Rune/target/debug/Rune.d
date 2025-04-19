@@ -1,1 +1,0 @@
-/Users/ayaan/Desktop/Rune/Rune/target/debug/Rune: /Users/ayaan/Desktop/Rune/Rune/src/ast.rs /Users/ayaan/Desktop/Rune/Rune/src/lexer.rs /Users/ayaan/Desktop/Rune/Rune/src/main.rs /Users/ayaan/Desktop/Rune/Rune/src/parser.rs
