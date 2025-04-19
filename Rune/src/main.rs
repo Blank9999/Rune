@@ -25,14 +25,14 @@ fn main() {
         // x == y
         // "#,
         // r#"
-        // if x == 3 || x == 5 && x != 10 {
-        // } elif another {
+        // if list<||>{x == 1, x == 2 , x == 3} || x == 3 || x == 5 && x != 10 {
         // } elif {
-        // } else {
+        // }  elif  {}
+        //   else {
         // }
         // "#,
         // r#"
-        // if list<int>{x == 1, x == 2 , x == 3, x == 7, x == 7, x == 7} || x == 0 {
+        // if list<||>{x == 1, x == 2 , x == 3, x == 7, x == 7, x == 7} || x == 0 {
         
         // }
         // "#,
@@ -42,11 +42,11 @@ fn main() {
         //        r#"
         // int (string x, int y) {x + y}
         // "#,
-        // r#"
-        // loop x == 3 && x == 5 && x == 7 && x == 8 { 
+        r#"
+        loop list<||>{x == 1, x == 2 , x == 3, x == 7, x == 7, x == 7} || x == 3 && x == 5 && x == 7 && x == 8 { 
 
-        // }
-        //  "#,
+        }
+         "#,
         // r#"
         // loop { 
         //     int x = 5
@@ -119,8 +119,8 @@ fn main() {
     //     r#"
     //     char x = 'z'
     //     "#,
-        r#"
-        list<int,list<string>> f = {1, 2 ,3}    
+        // r#"
+        // list<int,list<string>> f = {1, 2 ,3}    
         // r#"
         // list<int>(3) f = {1, 2 ,3}    
         // "#,
@@ -132,9 +132,9 @@ fn main() {
         // if x == list<int>{1, 2, 3}{
         // }  
         // "#,
-        r#"
-        list<int, list<int, list<int>>> x = [3, [4, 5]]
-        "#,
+        // r#"
+        // list<int, list<int, list<int>>> x = [3, [4, 5]]
+        // "#,
         // r#"
         // list<int>(5) f = {x == 1, x == 2 , x == 3}    
         // "#,
@@ -142,11 +142,23 @@ fn main() {
         //  <int, float> x = 1      
         // "#,
     //     r#"
-    //      bool a = list<||>{x == 1, x == 2 , x == 3}    
+    //      bool a = list<||>{x == 1, x == 2 , x == 3, x == 7, x == 7, x == 7} || x == 0
     //    "#,
-       r#"
-         int x = >>
-     "#,
+    //    r#"
+    //    bool a = false
+    //  "#,
+//      r#"
+//      list<||> a = {x == 1, x == 2 , x == 3, x == 7, x == 7, x == 7}
+//    "#,
+//     r#"
+//     bool a = list<||>{x == 1, x == 2 , x == 3}
+//  "#,
+    //     r#"
+    //     list<int,list<int>> a = {1, 2 ,{3,4,5}}
+    //  "#,
+    // //    r#"
+    //      int x = >>
+    //  "#,
     ];
 
     for (i, source_code) in test_cases.iter().enumerate() {

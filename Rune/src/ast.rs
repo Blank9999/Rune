@@ -36,6 +36,7 @@ pub enum Expression {
     InputOp(Box<Expression>),
     InterpolatedCall(String, Vec<Expression>), // for `create{pet}()`
     InterpolatedString(Vec<String>, Vec<Expression>), // New variant for interpolated strings
+    // Condition(Condition),
     ConditionList(Vec<Condition>),
 }
 
@@ -71,22 +72,10 @@ pub struct Function {
 }
 
 #[derive(Debug)]
-pub enum ConditionExpr {
-    Regular(Vec<Condition>), // For classic condition chains like a && b || c
-    List {
-        combinator: Type,       // "&&" or "||"
-        conditions: Vec<Condition>,
-    },
-}
-
-#[derive(Debug)]
 pub struct IfExpr {
-    // pub conditions: Vec<Expression>,
-    // pub conditions: Vec<Condition>,
-    pub condition: ConditionExpr,
-
+    pub condition: Condition,
     pub then_block: Vec<Statement>,
-    pub elif_blocks: Vec<(Vec<Expression>, Vec<Statement>)>,
+    pub elif_blocks: Vec<(Condition, Vec<Statement>)>,
     pub else_block: Option<Vec<Statement>>,
 }
 
