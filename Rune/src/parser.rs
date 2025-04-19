@@ -139,8 +139,10 @@ impl<'a> Parser<'a> {
             }
     
             // Otherwise, parse a regular expression
-            if let Type::Bool = &var_type  {
+
+            if let Type::Bool | Type::ConditionList(_) = &var_type  {
                 if !matches!(&self.current, Token::BoolLiteral(_)) {
+                    println!("It reached here for the not bool literal statment");
                     let mut conditions = Vec::new();
                     let value = self.parse_condition();
                     conditions.push(value);
@@ -154,7 +156,6 @@ impl<'a> Parser<'a> {
             }
 
             let value = self.parse_expression();
-
             return Statement::Declaration(Declaration {
                 var_type,
                 identifier,
