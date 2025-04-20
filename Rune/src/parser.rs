@@ -1,6 +1,6 @@
 use crate::lexer::{Lexer, Token,Operator,ComparisonOperator,LogicalOperator};
 use crate::ast::{
-    Type, Literal, Expression, Declaration, Program, Statement, IfExpr, LoopExpr,ConditionExpr,
+    Type, Literal, Expression, Declaration, Program, Statement, IfExpr, LoopExpr,
     Function, Parameter,Condition
 };
 
@@ -115,46 +115,9 @@ impl<'a> Parser<'a> {
         } else {
             panic!("Expected identifier, found {:?}", self.current);
         };
-
-        
     
         if let Token::Assignment(_) = self.current {
             self.advance();
-            // println!("The var type is {:?}",var_type);
-            // println!("The cur is {:?}",self.current);
-            match &var_type {
-                Type::ConditionList(combinator) |
-            Type::ConditionFixedList(combinator, _) => {
-    
-                self.expect(&Token::Assignment("=".to_string()));
-                // `expect` already advances if successful
-                
-
-        
-                match self.current {
-                    Token::Symbol('{') | Token::Symbol('[') => {
-                        self.advance();
-                        let exprs = self.parse_list_expression(|parser| parser.parse_comparison_expression());
-                        let conditions: Vec<Condition> = exprs.into_iter().map(Condition::Single).collect(); 
-                        return Statement::Declaration(Declaration {
-                            var_type: var_type,
-                            identifier,
-                            value: Expression::ConditionList((conditions)),
-                        });
-                    }
-                    _ => {
-                        panic!(
-                            "Expected '{{' or '[' to start a condition list block, found: {:?}",
-                            self.current
-                        );
-                    }
-                }
-            }
-                _ => {
-                    // Handle other types of var_type here or let it continue
-                }
-            }
-    
             // Check if the next token is the ">>" operator for input
             if let Token::InputToken = &self.current {
                 self.advance();
@@ -167,7 +130,6 @@ impl<'a> Parser<'a> {
                 } else {
                     None
                 };
-    
                 // Return the input statement
                 return Statement::Input {
                     var_type,
@@ -177,6 +139,21 @@ impl<'a> Parser<'a> {
             }
     
             // Otherwise, parse a regular expression
+
+            if let Type::Bool | Type::ConditionList(_) = &var_type  {
+                if !matches!(&self.current, Token::BoolLiteral(_)) {
+                    let mut conditions = Vec::new();
+                    let value = self.parse_condition();
+                    conditions.push(value);
+            
+                    return Statement::Declaration(Declaration {
+                        var_type,
+                        identifier,
+                        value: Expression::ConditionList(conditions),
+                    });
+                }
+            }
+
             let value = self.parse_expression();
             return Statement::Declaration(Declaration {
                 var_type,
@@ -439,55 +416,21 @@ where
 
 
     fn parse_if(&mut self) -> Statement {
-        self.advance(); // consume 'if'
-
-        
-        let mut condition_expr;
-
-        if let Token::List(_) = self.current {
-            let var_type = self.parse_type();
-            match self.current {
-                Token::Symbol('{') | Token::Symbol('[') => {
-                    self.advance();
-                    let exprs = self.parse_list_expression(|parser| parser.parse_comparison_expression());
-                    let elements: Vec<Condition> = exprs.into_iter().map(Condition::Single).collect();   
-                    condition_expr = ConditionExpr::List{combinator: var_type, conditions: elements};                 
-
-                },
-                _ => {
-                    panic!(
-                        "Expected '{{' or '[' to start a condition list block, found: {:?}",
-                        self.current
-                    );
-                }
-            }
-        } else {
-            let mut conditions = Vec::new();
-            conditions.push(self.parse_condition()); 
-            condition_expr = ConditionExpr::Regular(conditions); 
-        } 
-
+        self.advance(); 
+        let condition_expr = self.parse_condition();
         let then_block = self.parse_block();
         let mut elif_blocks = Vec::new();
         while let Token::Keyword(k) = &self.current {
             if k == "elif" {
                 self.advance();
-                let mut elif_conds = Vec::new();
-                while let Some(Token::IntLiteral(_) | Token::Ident(_) | Token::BoolLiteral(_)) = Some(&self.current) {
-                    elif_conds.push(self.parse_expression());
-                    if let Token::Symbol(',') = self.current {
-                        self.advance();
-                    } else {
-                        break;
-                    }
-                }
-                let elif_block = self.parse_block();
+                let mut elif_conds = self.parse_condition();
+                let elif_block = self.parse_block();         
                 elif_blocks.push((elif_conds, elif_block));
             } else {
                 break;
             }
         }
-
+        println!("It reached here and fifnshed parsing the elif statement");
         let else_block = if let Token::Keyword(k) = &self.current {
             if k == "else" {
                 self.advance();
@@ -508,11 +451,6 @@ where
     }
 
     pub fn parse_condition(&mut self) -> Condition {
-        // self.expect(&Token::Symbol('('));
-        // let cond = self.parse_or_condition();
-        // self.expect(&Token::Symbol(')'));
-        // cond
-
         if let Token::Symbol('(') = &self.current {
             // Handle the case where the condition is inside parentheses
             self.advance(); // Consume '('
@@ -560,8 +498,53 @@ where
             let cond = self.parse_or_condition();
             self.expect(&Token::Symbol(')'));
             Condition::Grouped(Box::new(cond))
-        } else {
+        } else if let Token::List(_) = self.current {
+            self.parse_condition_list()
+        } 
+        else {
             Condition::Single(self.parse_comparison_expression())
+        }
+    }
+
+    fn parse_condition_list(&mut self) -> Condition {
+        let comb = self.parse_type();
+
+        // println!("It reached the condition list function");
+
+        match &comb {
+            Type::ConditionList(comb) |
+            Type::ConditionFixedList(comb, _) => {
+                match self.current {
+                    Token::Symbol('{') | Token::Symbol('[') => {
+                        self.advance();
+                        let exprs = self.parse_list_expression(|parser| parser.parse_comparison_expression());
+                        let mut conditions: Vec<Condition> = exprs.into_iter().map(Condition::Single).collect(); 
+                        let mut result = conditions.remove(0);
+
+                        for cond in conditions {
+                            result = match comb.as_str() {
+                                "&&" => Condition::And(Box::new(result), Box::new(cond)),
+                                "||" => Condition::Or(Box::new(result), Box::new(cond)),
+                                _ => panic!("Unsupported combinator: {}", comb),
+                            }
+                        }
+
+                        // self.expect(&Token::Symbol('}'));
+                        // self.advance();
+
+                        return result;
+                    },
+                    _ => {
+                        panic!("Expected || or && but found: {:?}",self.current)
+                    }
+                }
+            }
+            _ => {
+                panic!(
+                    "Expected 'some type of list but found: {:?}",
+                    self.current
+                );
+            }
         }
     }
 
@@ -608,6 +591,7 @@ where
                         }
 
                         // Now, expect the block of code for the body of the loop
+                        
                         let body = self.parse_block();
                         Statement::Loop(LoopExpr::Range {
                             var: var_name,
@@ -627,7 +611,7 @@ where
                 }
             }
             // Condition-based loop `loop condition { ... }`
-            Token::BoolLiteral(_) | Token::Ident(_) | Token::Symbol('(') => {
+            Token::BoolLiteral(_) | Token::Ident(_) | Token::Symbol('(') | Token::List(_) => {
                 self.advance();
                 let mut condition = Vec::new();
                 condition.push(self.parse_condition());

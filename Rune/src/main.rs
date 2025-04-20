@@ -25,28 +25,28 @@ fn main() {
         // x == y
         // "#,
         // r#"
-        // if x == 3 || x == 5 && x != 10 {
-        // } elif another {
+        // if list<||>{x == 1, x == 2 , x == 3} || x == 3 || x == 5 && x != 10 {
         // } elif {
-        // } else {
+        // }  elif  {}
+        //   else {
         // }
         // "#,
-        // r#"
-        // if list<&&>{x == 1, x == 2 , x == 3, x == 7, x == 7, x == 7} {
+        r#"
+        if list<||>{x == 1, x == 2 , x == 3, x == 7, x == 7, x == 7} || x == 0 {
         
-        // }
-        // "#,
+        }
+        "#,
         // r#"
         // bool flag = true;
         // "#,
         //        r#"
         // int (string x, int y) {x + y}
         // "#,
-        // r#"
-        // loop x == 3 && x == 5 && x == 7 && x == 8 { 
+        r#"
+        loop list<||>{x == 1, x == 2 , x == 3, x == 7, x == 7, x == 7} || x == 3 && x == 5 && x == 7 && x == 8 { 
 
-        // }
-        // "#,
+        }
+      "#,
         // r#"
         // loop { 
         //     int x = 5
@@ -120,6 +120,8 @@ fn main() {
     //     char x = 'z'
     //     "#,
         // r#"
+        // list<int,list<string>> f = {1, 2 ,3}    
+        // r#"
         // list<int>(3) f = {1, 2 ,3}    
         // "#,
         // r#"
@@ -133,14 +135,29 @@ fn main() {
         // r#"
         // list<int, list<int, list<int>>> x = [3, [4, 5]]
         // "#,
+        // r#"
+        // list<int>(5) f = {x == 1, x == 2 , x == 3}    
+        // "#,
        // r#"
         //  <int, float> x = 1      
         // "#,
+        r#"
+         bool a = list<||>{x == 1, x == 2 , x == 3, x == 7, x == 7, x == 7} || x == 0
+       "#,
+       r#"
+       bool a = false
+     "#,
+     r#"
+     list<||> a = list<||>{x == 1, x == 2 , x == 3, x == 7, x == 7, x == 7}
+    "#,
+//     r#"
+//     bool a = list<||>{x == 1, x == 2 , x == 3, x == 7, x == 7, x == 7}
+//  "#,
     //     r#"
-    //      int x = 3 
-    //    "#,
-    //    r#"
-    //      int x = >> 
+    //     list<int,list<int>> a = {1, 2 ,{3,4,5}}
+    //  "#,
+    // //    r#"
+    //      int x = >>
     //  "#,
         r#"
         
