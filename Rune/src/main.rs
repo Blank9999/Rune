@@ -31,38 +31,38 @@ fn main() {
         //   else {
         // }
         // "#,
-        r#"
-        if list<||>{x == 1, x == 2 , x == 3, x == 7, x == 7, x == 7} || x == 0 {
+        // r#"
+        // if list<||>{x == 1, x == 2 , x == 3, x == 7, x == 7, x == 7} || x == 0 {
         
-        }
-        "#,
+        // }
+        // "#,
         // r#"
         // bool flag = true;
         // "#,
         //        r#"
         // int (string x, int y) {x + y}
         // "#,
-        r#"
-        loop list<||>{x == 1, x == 2 , x == 3, x == 7, x == 7, x == 7} || x == 3 && x == 5 && x == 7 && x == 8 { 
+    //     r#"
+    //     loop list<||>{x == 1, x == 2 , x == 3, x == 7, x == 7, x == 7} || x == 3 && x == 5 && x == 7 && x == 8 { 
 
-        }
-      "#,
+    //     }
+    //   "#,
         // r#"
         // loop { 
         //     int x = 5
         //     string y = x
         // }
         // "#,
-        // r#"
-        // loop num -> nums { 
-        //     int x = 5
-        //     string y = x
-        //     loop x -> y {
-        //         int a = 5
-        //         string b = c
-        //     }
-        // }
-        // "#,
+        r#"
+        loop num -> nums { 
+            int x = 5
+            string y = x
+            loop x -> y {
+                int a = 5
+                string b = c
+            }
+        }
+        "#,
         // r#"
         // loop i -> 0 : 3 : 1 { 
         //     int x = 5
@@ -141,15 +141,15 @@ fn main() {
        // r#"
         //  <int, float> x = 1      
         // "#,
-        r#"
-         bool a = list<||>{x == 1, x == 2 , x == 3, x == 7, x == 7, x == 7} || x == 0
-       "#,
-       r#"
-       bool a = false
-     "#,
-     r#"
-     list<||> a = list<||>{x == 1, x == 2 , x == 3, x == 7, x == 7, x == 7}
-    "#,
+    //     r#"
+    //      bool a = list<||>{x == 1, x == 2 , x == 3, x == 7, x == 7, x == 7} || x == 0
+    //    "#,
+    //    r#"
+    //    bool a = false
+    //  "#,
+    //  r#"
+    //  list<||> a = list<||>{x == 1, x == 2 , x == 3, x == 7, x == 7, x == 7}
+    // "#,
 //     r#"
 //     bool a = list<||>{x == 1, x == 2 , x == 3, x == 7, x == 7, x == 7}
 //  "#,
