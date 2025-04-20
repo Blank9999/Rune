@@ -159,6 +159,16 @@ fn main() {
     // //    r#"
     //      int x = >>
     //  "#,
+        r#"
+        int x = getX(y, z, 3)
+        "#,
+        r#"
+        int x = getX(4 + 3 / 2, 5.5 * 2 + 6 / 3)
+        "#,
+        r#"
+        if x + 2 == 4 || (x + 3) / 2 == 10 {
+        }
+        "#,
     ];
 
     for (i, source_code) in test_cases.iter().enumerate() {
