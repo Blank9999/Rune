@@ -33,15 +33,14 @@ pub enum Operator {
     Arithmetic(ArithmeticOperator),
     Comparison(ComparisonOperator),
     Logical(LogicalOperator),
-
 }
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum ArithmeticOperator {
     Add, // +
-    Subtract, // -
-    Multiply, // *
-    Divide, // /
+    Sub, // -
+    Mul, // *
+    Div, // /
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -61,6 +60,16 @@ pub enum LogicalOperator {
     Not,      // !
 }
 
+impl fmt::Display for ArithmeticOperator {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            ArithmeticOperator::Add => write!(f, "+"),
+            ArithmeticOperator::Sub => write!(f, "-"),
+            ArithmeticOperator::Mul => write!(f, "*"),
+            ArithmeticOperator::Div => write!(f, "/"),
+        }
+    }
+}
 
 impl fmt::Display for LogicalOperator {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -82,6 +91,16 @@ impl fmt::Display for ComparisonOperator {
             ComparisonOperator::GreaterThan => write!(f, ">"),
             ComparisonOperator::LessThanOrEqual => write!(f, "<="),
             ComparisonOperator::GreaterThanOrEqual => write!(f, ">="),
+        }
+    }
+}
+
+impl fmt::Display for Operator {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Operator::Arithmetic(op) => write!(f, "{}", op),
+            Operator::Logical(op) => write!(f, "{}", op),
+            Operator::Comparison(op) => write!(f, "{}", op),
         }
     }
 }
@@ -223,15 +242,15 @@ impl<'a> Lexer<'a> {
                         self.next_char();
                         return Token::RangeArrow;
                     }
-                    return Token::Operator(Operator::Arithmetic(ArithmeticOperator::Subtract))
+                    return Token::Operator(Operator::Arithmetic(ArithmeticOperator::Sub))
                 },
                 '*' => {
                     self.next_char();
-                    return Token::Operator(Operator::Arithmetic(ArithmeticOperator::Multiply))
+                    return Token::Operator(Operator::Arithmetic(ArithmeticOperator::Mul))
                 },
                 '/' => {
                     self.next_char();
-                    return Token::Operator(Operator::Arithmetic(ArithmeticOperator::Divide))
+                    return Token::Operator(Operator::Arithmetic(ArithmeticOperator::Div))
                 },
                 '>' => {
                     self.next_char();
