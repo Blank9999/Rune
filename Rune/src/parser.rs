@@ -1,4 +1,4 @@
-use crate::lexer::{Lexer, Token,Operator,ComparisonOperator,LogicalOperator};
+use crate::lexer::{Lexer, Token,Operator,ComparisonOperator,LogicalOperator, ArithmeticOperator};
 use crate::ast::{
     Type, Literal, Expression, Declaration, Program, Statement, IfExpr, LoopExpr,
     Function, Parameter,Condition
@@ -47,17 +47,17 @@ impl<'a> Parser<'a> {
             Token::Keyword(k) if k == "loop" => self.parse_loop(),
             Token::Keyword(k) if k == "return" => {
                 self.advance();
-                let expr = self.parse_expression();
+                let expr = self.parse_expression(0);
                 Statement::Return(expr)
             }
             Token::Keyword(k) if k == "do" => {
                 self.advance();
-                let expr = self.parse_expression();
+                let expr = self.parse_expression(0);
                 Statement::Do(expr)
             }
             Token::Keyword(k) if k == "guard" => {
                 self.advance();
-                let cond = self.parse_expression();
+                let cond = self.parse_expression(0);
                 Statement::Guard(cond)
             }
             Token::Keyword(k) if k == "func" => {
@@ -93,7 +93,7 @@ impl<'a> Parser<'a> {
             }
 
             _ => {
-                let expr = self.parse_expression();
+                let expr = self.parse_expression(0);
                 Statement::Expression(expr)
             }
         }
@@ -101,7 +101,7 @@ impl<'a> Parser<'a> {
 
     fn parse_output(&mut self) -> Statement {
         self.advance();
-        let expression = self.parse_expression();
+        let expression = self.parse_expression(0);
         Statement::Output(expression)
     }
 
@@ -154,7 +154,7 @@ impl<'a> Parser<'a> {
                 }
             }
 
-            let value = self.parse_expression();
+            let value = self.parse_expression(0);
             return Statement::Declaration(Declaration {
                 var_type,
                 identifier,
@@ -267,7 +267,145 @@ impl<'a> Parser<'a> {
         }
     }
     
-    fn parse_expression(&mut self) -> Expression {
+    // fn parse_expression(&mut self) -> Expression {
+    //     match &self.current {
+    //         Token::IntLiteral(n) => {
+    //             let lit = Literal::Int(*n);
+    //             self.advance();
+    //             Expression::Literal(lit)
+    //         }
+    //         Token::StringLiteral(s) => {
+    //             let lit = Literal::String(s.clone());
+    //             self.advance();
+    //             Expression::Literal(lit)
+    //         }
+    //         Token::BoolLiteral(b) => {
+    //             let lit = Literal::Bool(*b);
+    //             self.advance();
+    //             Expression::Literal(lit)
+    //         }
+    //         Token::FloatLiteral(f) => {
+    //             let lit = Literal::Float(*f);
+    //             self.advance();
+    //             Expression::Literal(lit)
+    //         }
+    //         Token::CharLiteral(c) => {
+    //             let lit = Literal::Char(*c);
+    //             self.advance();
+    //             Expression::Literal(lit)
+    //         }
+    //         Token::Ident(name) => {
+    //             let id = name.clone();
+    //             self.advance();
+    //             if self.current == Token::Symbol('(') {
+    //                 self.advance(); // skip '('
+    //                 let mut ag = Vec::new();
+            
+    //                 if self.current != Token::Symbol(')') {
+    //                     loop {
+    //                         ag.push(self.parse_expression());
+    //                         if self.current == Token::Symbol(',') {
+    //                             self.advance(); // consume comma
+    //                         } else {
+    //                             break;
+    //                         }
+    //                     }
+    //                 }
+            
+    //                 if self.current != Token::Symbol(')') {
+    //                     panic!("Expected ')', found {:?}", self.current);
+    //                 }
+    //                 self.advance(); // skip ')'
+            
+    //                 Expression::FunctionCall {
+    //                     name: id,
+    //                     args: ag,
+    //                 }
+    //             } else {
+    //                 Expression::Identifier(id)
+    //             }
+    //         }
+
+    //         Token::Symbol('`') => {
+    //             self.advance(); // Skip the opening backtick
+    //             let mut static_parts = Vec::new();
+    //             let mut expressions = Vec::new();
+    
+    //             loop {
+    //                 match &self.current {
+    //                     Token::Symbol('`') => {
+    //                         self.advance(); // Skip the closing backtick
+    //                         break;
+    //                     },
+    //                     Token::Symbol('{') => {
+    //                         self.advance(); // Skip the opening curly brace
+    //                         let expr = self.parse_expression();
+    //                         expressions.push(expr);
+    
+    //                         // Expect the closing curly brace
+    //                         if let Token::Symbol('}') = &self.current {
+    //                             self.advance(); // Skip the closing curly brace
+    //                         } else {
+    //                             panic!("Expected '}}', found {:?}", self.current);
+    //                         }
+    //                     },
+    //                     Token::Ident(s) => {
+    //                         static_parts.push(s.clone());
+    //                         self.advance();
+    //                     },
+    //                     _ => {
+    //                         panic!("Unexpected token inside interpolated string: {:?}", self.current);
+    //                     }
+    //                 }
+    //             }
+    
+    //             Expression::InterpolatedString(static_parts, expressions)
+    //         }
+
+    //         // Parse list literals (both curly and square brackets)
+    //         Token::Symbol('{') | Token::Symbol('[') => {
+    //             let opening_brace = self.current.clone();
+    //             // Consume the opening brace
+    //             self.advance();
+
+    //             // Parse the list elements until the closing brace or square bracket
+    //             let mut elements = self.parse_list_expression(|parser| parser.parse_expression());
+
+    //             // Create and return the list literal expression
+    //             let list_expr = Expression::Literal(Literal::List(elements));
+    //             list_expr
+    //         }
+    //         _ => panic!("Unexpected token in expression: {:?}", self.current),
+    //     }
+    // }
+
+    fn get_precedence(&self, token: &Token) -> u8 {
+        match token {
+            Token::Operator(Operator::Arithmetic(ArithmeticOperator::Add))
+            | Token::Operator(Operator::Arithmetic(ArithmeticOperator::Sub)) => 10,
+    
+            Token::Operator(Operator::Arithmetic(ArithmeticOperator::Mul))
+            | Token::Operator(Operator::Arithmetic(ArithmeticOperator::Div)) => 20,
+    
+            Token::Operator(Operator::Comparison(_)) => 5,
+    
+            Token::Operator(Operator::Logical(_)) => 3,
+    
+            _ => 0,
+        }
+    }
+    
+    fn parse_expression(&mut self, precedence: u8) -> Expression {
+        let mut left = self.parse_prefix();
+    
+        while self.get_precedence(&self.current) > precedence {
+            left = self.parse_infix(left, self.get_precedence(&self.current));
+        }
+    
+        left
+    }
+    
+    fn parse_prefix(&mut self) -> Expression {
         match &self.current {
             Token::IntLiteral(n) => {
                 let lit = Literal::Int(*n);
@@ -297,61 +435,92 @@ impl<'a> Parser<'a> {
             Token::Ident(name) => {
                 let id = name.clone();
                 self.advance();
-                Expression::Identifier(id)
+    
+                if self.current == Token::Symbol('(') {
+                    self.advance();
+                    let mut args = Vec::new();
+    
+                    if self.current != Token::Symbol(')') {
+                        loop {
+                            args.push(self.parse_expression(0));
+                            if self.current == Token::Symbol(',') {
+                                self.advance();
+                            } else {
+                                break;
+                            }
+                        }
+                    }
+    
+                    if self.current != Token::Symbol(')') {
+                        panic!("Expected ')', found {:?}", self.current);
+                    }
+                    self.advance();
+    
+                    Expression::FunctionCall { name: id, args }
+                } else {
+                    Expression::Identifier(id)
+                }
             }
-
+            Token::Symbol('(') => {
+                self.advance(); // Consume '('
+                let expr = self.parse_expression(0); // Parse the expression inside the parentheses
+                if self.current != Token::Symbol(')') {
+                    panic!("Expected ')', found {:?}", self.current);
+                }
+                self.advance(); // Consume ')'
+                expr
+            }
             Token::Symbol('`') => {
-                self.advance(); // Skip the opening backtick
+                self.advance();
                 let mut static_parts = Vec::new();
                 let mut expressions = Vec::new();
     
                 loop {
                     match &self.current {
                         Token::Symbol('`') => {
-                            self.advance(); // Skip the closing backtick
+                            self.advance();
                             break;
-                        },
+                        }
                         Token::Symbol('{') => {
-                            self.advance(); // Skip the opening curly brace
-                            let expr = self.parse_expression();
+                            self.advance();
+                            let expr = self.parse_expression(0);
                             expressions.push(expr);
-    
-                            // Expect the closing curly brace
-                            if let Token::Symbol('}') = &self.current {
-                                self.advance(); // Skip the closing curly brace
+                            if self.current == Token::Symbol('}') {
+                                self.advance();
                             } else {
                                 panic!("Expected '}}', found {:?}", self.current);
                             }
-                        },
+                        }
                         Token::Ident(s) => {
                             static_parts.push(s.clone());
                             self.advance();
-                        },
-                        _ => {
-                            panic!("Unexpected token inside interpolated string: {:?}", self.current);
                         }
+                        _ => panic!("Unexpected token inside interpolated string: {:?}", self.current),
                     }
                 }
     
                 Expression::InterpolatedString(static_parts, expressions)
             }
-
-            // Parse list literals (both curly and square brackets)
             Token::Symbol('{') | Token::Symbol('[') => {
-                let opening_brace = self.current.clone();
-                // Consume the opening brace
                 self.advance();
-
-                // Parse the list elements until the closing brace or square bracket
-                let mut elements = self.parse_list_expression(|parser| parser.parse_expression());
-
-                // Create and return the list literal expression
-                let list_expr = Expression::Literal(Literal::List(elements));
-                list_expr
+                let elements = self.parse_list_expression(|parser| parser.parse_expression(0));
+                Expression::Literal(Literal::List(elements))
             }
             _ => panic!("Unexpected token in expression: {:?}", self.current),
         }
     }
+    
+    fn parse_infix(&mut self, left: Expression, precedence: u8) -> Expression {
+        match &self.current {
+            Token::Operator(op) => {
+                let op_str = format!("{}", op); // Convert the operator to a string like "+" or "*"
+                self.advance();
+                let right = self.parse_expression(precedence);
+                Expression::BinaryOp(Box::new(left), op_str, Box::new(right))
+            }
+            _ => left, // fallback
+        }
+    }    
 
     fn parse_list_expression<F>(&mut self, mut parse_fn: F) -> Vec<Expression>
 where
@@ -387,13 +556,13 @@ where
     }
 
     fn parse_comparison_expression(&mut self) -> Expression {
-        let mut left = self.parse_expression();
+        let mut left = self.parse_expression(0);
         // let mut left = self.parse_condition();
         while let Token::Operator(Operator::Comparison(_)) = &self.current {
             let op_token = self.current.clone();
             self.advance(); // consume the operator
 
-            let right = self.parse_expression(); // again, use your existing parser
+            let right = self.parse_expression(0); // again, use your existing parser
             // let right = self.parse_expression();
             let op_str = self.token_to_op_string(&op_token);
 
@@ -564,7 +733,7 @@ where
 
                     // Handles loop num -> nums {} type of range
                     if let Token::Ident(name) = &self.current {
-                        let iteratable = self.parse_expression();
+                        let iteratable = self.parse_expression(0);
                         let body = self.parse_block();
                         
                         Statement::Loop(LoopExpr::ForEach {
@@ -574,7 +743,7 @@ where
                         })
                     } else {
                         // Handles loop i -> 0 : 3 : 1 type of range
-                        let start_expr = self.parse_expression();
+                        let start_expr = self.parse_expression(0);
                         let mut end_expr = None;
                         let mut step_expr = None;
 
@@ -582,11 +751,11 @@ where
                         
                         if let Token::Symbol(':') = self.current {
                             self.advance();
-                            end_expr = Some(self.parse_expression());
+                            end_expr = Some(self.parse_expression(0));
 
                             if let Token::Symbol(':') = self.current {
                                 self.advance();
-                                step_expr = Some(self.parse_expression());
+                                step_expr = Some(self.parse_expression(0));
                             }
                         }
 
@@ -660,7 +829,7 @@ where
 
             let default = if let Token::Assignment(_) = &self.current {
                 self.advance();
-                Some(self.parse_expression())
+                Some(self.parse_expression(0))
             } else {
                 None
             };
