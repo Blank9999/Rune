@@ -1,6 +1,6 @@
 use crate::lexer::{Lexer, Token,Operator,ComparisonOperator,LogicalOperator, ArithmeticOperator};
 use crate::ast::{
-    Type, Literal, Expression, Declaration, Program, Statement, IfExpr, LoopExpr,
+    Type, Literal, Expression, Declaration, Assignment, Program, Statement, IfExpr, LoopExpr,
     Function, Parameter,Condition
 };
 
@@ -41,7 +41,6 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_statement(&mut self) -> Statement {
-
         match &self.current {
             Token::Keyword(k) if k == "if" => self.parse_if(),
             Token::Keyword(k) if k == "loop" => self.parse_loop(),
@@ -73,13 +72,14 @@ impl<'a> Parser<'a> {
             | Token::StringType(_) 
             | Token::BoolType(_) 
             | Token::FloatType(_) 
-            | Token::CharType(_) => {
+            | Token::CharType(_) 
+            | Token::ErrorType(_) => {
                 if let Token::Symbol('(') = self.peek() {
                     Statement::Function(self.parse_function())
-                } else if  let Token::Ident(_) = self.peek() {
+                } else if let Token::Ident(_) = self.peek() {
                     self.parse_declaration()
                 } else {
-                    panic!("It was neither the syntax for a vaiable declaration or a lambda function");
+                    panic!("It was neither the syntax for a variable declaration or a lambda function");
                 }
             }
         
@@ -92,12 +92,94 @@ impl<'a> Parser<'a> {
                 self.parse_declaration()
             }
 
+            Token::Ident(_) => {
+                self.parse_assignment()
+            }
+
             _ => {
                 let expr = self.parse_expression(0);
                 Statement::Expression(expr)
             }
         }
-    }  
+    }
+    
+    fn parse_assignment(&mut self) -> Statement {
+        let identifier = if let Token::Ident(name) = &self.current {
+            let id = name.clone();
+            self.advance();
+            id
+        } else {
+            panic!("Expected identifier, found {:?}", self.current);
+        };
+    
+        if let Token::Assignment(_) = self.current {
+            self.advance();
+            // Check if the next token is the ">>" operator for input
+            if let Token::InputToken = &self.current {
+                self.advance();
+    
+                // Check if there is an optional string literal before the ">>"
+                let prompt = if let Token::StringLiteral(prompt) = &self.current {
+                    let prompt_str = prompt.clone();
+                    self.advance();
+                    Some(prompt_str)
+                } else {
+                    None
+                };
+                // Return the input statement
+                return Statement::AssignInput {
+                    identifier,
+                    prompt,
+                };
+            }
+    
+            // Otherwise, parse a regular expression
+
+            // if let Token::List(_) = &self.current {
+            //     let mut conditions = Vec::new();
+            //     let value = self.parse_condition();
+            //     conditions.push(value);
+        
+            //     return Statement::Assignment(Assignment {
+            //         identifier,
+            //         value: Expression::ConditionList(conditions),
+            //     });
+            // }
+
+            if let Token::List(_) = &self.current {
+                self.advance(); // consume the Token::List
+                while self.current != Token::Operator(Operator::Comparison(ComparisonOperator::GreaterThan)) {
+                    self.advance();
+                    if self.current == Token::Eof {
+                        panic!("Expected '{{' for inline list literal, but reached EOF");
+                    }
+                }
+
+                self.advance();
+
+                if self.current == Token::Symbol('{') {
+                    self.advance(); // consume '{'
+                    let elements = self.parse_list_expression(|parser| parser.parse_expression(0));
+                    let value = Expression::Literal(Literal::List(elements));
+                    return Statement::Assignment(Assignment {
+                        identifier,
+                        value,
+                    });
+                } else {
+                    panic!("Expected '{{' after list type for inline list literal, found {:?}", self.current);
+                }
+            }
+
+            let value = self.parse_expression(0);
+            return Statement::Assignment(Assignment {
+                identifier,
+                value,
+            });
+
+        } else {
+            panic!("Expected '=', found {:?}", self.current);
+        }
+    }
 
     fn parse_output(&mut self) -> Statement {
         self.advance();
@@ -266,118 +348,6 @@ impl<'a> Parser<'a> {
             _ => panic!("Expected type, found {:?}", self.current),
         }
     }
-    
-    // fn parse_expression(&mut self) -> Expression {
-    //     match &self.current {
-    //         Token::IntLiteral(n) => {
-    //             let lit = Literal::Int(*n);
-    //             self.advance();
-    //             Expression::Literal(lit)
-    //         }
-    //         Token::StringLiteral(s) => {
-    //             let lit = Literal::String(s.clone());
-    //             self.advance();
-    //             Expression::Literal(lit)
-    //         }
-    //         Token::BoolLiteral(b) => {
-    //             let lit = Literal::Bool(*b);
-    //             self.advance();
-    //             Expression::Literal(lit)
-    //         }
-    //         Token::FloatLiteral(f) => {
-    //             let lit = Literal::Float(*f);
-    //             self.advance();
-    //             Expression::Literal(lit)
-    //         }
-    //         Token::CharLiteral(c) => {
-    //             let lit = Literal::Char(*c);
-    //             self.advance();
-    //             Expression::Literal(lit)
-    //         }
-    //         Token::Ident(name) => {
-    //             let id = name.clone();
-    //             self.advance();
-    //             if self.current == Token::Symbol('(') {
-    //                 self.advance(); // skip '('
-    //                 let mut ag = Vec::new();
-            
-    //                 if self.current != Token::Symbol(')') {
-    //                     loop {
-    //                         ag.push(self.parse_expression());
-    //                         if self.current == Token::Symbol(',') {
-    //                             self.advance(); // consume comma
-    //                         } else {
-    //                             break;
-    //                         }
-    //                     }
-    //                 }
-            
-    //                 if self.current != Token::Symbol(')') {
-    //                     panic!("Expected ')', found {:?}", self.current);
-    //                 }
-    //                 self.advance(); // skip ')'
-            
-    //                 Expression::FunctionCall {
-    //                     name: id,
-    //                     args: ag,
-    //                 }
-    //             } else {
-    //                 Expression::Identifier(id)
-    //             }
-    //         }
-
-    //         Token::Symbol('`') => {
-    //             self.advance(); // Skip the opening backtick
-    //             let mut static_parts = Vec::new();
-    //             let mut expressions = Vec::new();
-    
-    //             loop {
-    //                 match &self.current {
-    //                     Token::Symbol('`') => {
-    //                         self.advance(); // Skip the closing backtick
-    //                         break;
-    //                     },
-    //                     Token::Symbol('{') => {
-    //                         self.advance(); // Skip the opening curly brace
-    //                         let expr = self.parse_expression();
-    //                         expressions.push(expr);
-    
-    //                         // Expect the closing curly brace
-    //                         if let Token::Symbol('}') = &self.current {
-    //                             self.advance(); // Skip the closing curly brace
-    //                         } else {
-    //                             panic!("Expected '}}', found {:?}", self.current);
-    //                         }
-    //                     },
-    //                     Token::Ident(s) => {
-    //                         static_parts.push(s.clone());
-    //                         self.advance();
-    //                     },
-    //                     _ => {
-    //                         panic!("Unexpected token inside interpolated string: {:?}", self.current);
-    //                     }
-    //                 }
-    //             }
-    
-    //             Expression::InterpolatedString(static_parts, expressions)
-    //         }
-
-    //         // Parse list literals (both curly and square brackets)
-    //         Token::Symbol('{') | Token::Symbol('[') => {
-    //             let opening_brace = self.current.clone();
-    //             // Consume the opening brace
-    //             self.advance();
-
-    //             // Parse the list elements until the closing brace or square bracket
-    //             let mut elements = self.parse_list_expression(|parser| parser.parse_expression());
-
-    //             // Create and return the list literal expression
-    //             let list_expr = Expression::Literal(Literal::List(elements));
-    //             list_expr
-    //         }
-    //         _ => panic!("Unexpected token in expression: {:?}", self.current),
-    //     }
-    // }
 
     fn get_precedence(&self, token: &Token) -> u8 {
         match token {
@@ -431,6 +401,38 @@ impl<'a> Parser<'a> {
                 let lit = Literal::Char(*c);
                 self.advance();
                 Expression::Literal(lit)
+            }
+            Token::Operator(Operator::Comparison(ComparisonOperator::LessThan)) => {
+                self.advance(); // consume the <
+                while self.current != Token::Operator(Operator::Comparison(ComparisonOperator::GreaterThan)) {
+                    self.advance();
+                    if self.current == Token::Eof {
+                        panic!("Expected '{{' for inline list literal, but reached EOF");
+                    }
+                }
+
+                self.advance();
+
+                self.parse_prefix()
+            }
+            Token::List(_) => {
+                self.advance(); // consume the Token::List
+                while self.current != Token::Operator(Operator::Comparison(ComparisonOperator::GreaterThan)) {
+                    self.advance();
+                    if self.current == Token::Eof {
+                        panic!("Expected '{{' for inline list literal, but reached EOF");
+                    }
+                }
+
+                self.advance();
+
+                if self.current == Token::Symbol('{') {
+                    self.advance(); // consume '{'
+                    let elements = self.parse_list_expression(|parser| parser.parse_expression(0));
+                    return Expression::Literal(Literal::List(elements));
+                } else {
+                    panic!("Expected '{{' after list type for inline list literal, found {:?}", self.current);
+                }
             }
             Token::Ident(name) => {
                 let id = name.clone();

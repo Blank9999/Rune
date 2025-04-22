@@ -1,10 +1,11 @@
 mod lexer;  // Import the lexer module
 mod parser;
 mod ast;  
+mod semantic_analyzer;
 
 use crate::lexer::{Lexer, Token}; // Bring Lexer and Token into scope
 use crate::parser::Parser;
-
+use crate::semantic_analyzer::SemanticAnalyzer;
 
 fn main() {
     let test_cases = vec![
@@ -159,14 +160,50 @@ fn main() {
     // //    r#"
     //      int x = >>
     //  "#,
+        // r#"
+        // int x = getX(y, z, 3)
+        // "#,
+        // r#"
+        // int x = getX(4 + 3 / 2, 5.5 * 2 + 6 / 3)
+        // "#,
+        // r#"
+        // if x + 2 == 4 || (x + 3) / 2 == 10 {
+        // }
+        // "#,
         r#"
-        int x = getX(y, z, 3)
+        int x = 5;
+        x = 10;
         "#,
         r#"
-        int x = getX(4 + 3 / 2, 5.5 * 2 + 6 / 3)
+        list<int> x = {10, 20}
+        list<float> x = list<float>{10.0}
+        if x == list<||>{x==4, x==5} {
+        }
         "#,
         r#"
-        if x + 2 == 4 || (x + 3) / 2 == 10 {
+        int x = 5;
+        x = list<string>{"hl"};
+        "#,
+    ];
+
+    let test_cases = [
+        r#"
+        list<int> x = {1,2,3};
+        "#,
+        r#"
+        list<int, float> x = {1,2,3};
+        list<int, float> x = {1,2,3};
+        "#,
+        r#"
+        <int, float> x = 1
+        "#,
+        // r#" THIS FAILS FOR SOME REASON?????
+        // <int, float> x = 1
+        // <int, float> x = 1
+        // "#,
+        r#"
+        int x  = 5;
+        if list<||>{x == 4} {
         }
         "#,
     ];
@@ -186,6 +223,14 @@ fn main() {
 
         let program = parser.parse_program();
         println!("{:#?}", program);
+
+        let mut semantic_analyzer = SemanticAnalyzer::new();
+        
+        // Perform semantic analysis and check for errors
+        match semantic_analyzer.analyze(&program) {
+            Ok(_) => println!("Semantic analysis successful!"),
+            Err(e) => eprintln!("Semantic analysis failed: {}", e),
+        }
         println!();
     }
 }
