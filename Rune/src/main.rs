@@ -53,16 +53,16 @@ fn main() {
         //     string y = x
         // }
         // "#,
-        r#"
-        loop num -> nums { 
-            int x = 5
-            string y = x
-            loop x -> y {
-                int a = 5
-                string b = c
-            }
-        }
-        "#,
+        // r#"
+        // loop num -> nums { 
+        //     int x = 5
+        //     string y = x
+        //     loop x -> y {
+        //         int a = 5
+        //         string b = c
+        //     }
+        // }
+        // "#,
         // r#"
         // loop i -> 0 : 3 : 1 { 
         //     int x = 5
@@ -159,14 +159,25 @@ fn main() {
     // //    r#"
     //      int x = >>
     //  "#,
+        // r#"
+        // int x = getX(y, z, 3)
+        // "#,
+        // r#"
+        // int x = getX(4 + 3 / 2, 5.5 * 2 + 6 / 3)
+        // "#,
+        // r#"
+        // if x + 2 == 4 || (x + 3) / 2 == 10 {
+        // }
+        // "#,
         r#"
-        int x = getX(y, z, 3)
-        "#,
-        r#"
-        int x = getX(4 + 3 / 2, 5.5 * 2 + 6 / 3)
-        "#,
-        r#"
-        if x + 2 == 4 || (x + 3) / 2 == 10 {
+        int y = 6 
+        string z = "nahan"
+        bool cond = true
+
+        if cond {
+            << x
+        } else {
+            << y
         }
         "#,
     ];
