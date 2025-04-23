@@ -80,12 +80,12 @@ fn main() {
         //     return x
         // }
         // "#,
-        // r#"
-        // int (string x, int y) {
-        //     int z = 4
-        //      return x
-        // }
-        // "#,
+        r#"
+        int y = int (string x, int y) {
+            int z = 4
+             return x
+        }
+        "#,
         // r#"
         // int x = 4
         // "#,
@@ -170,31 +170,35 @@ fn main() {
         // if x + 2 == 4 || (x + 3) / 2 == 10 {
         // }
         // "#,
-        r#"
-        int y = 6 
-        string z = "nahan"
-        bool cond = true
+        // r#"
+        // int y = 6 
+        // string z = "nahan"
+        // bool cond = true
 
-        if cond {
-            << x
-        } else {
-            << y
-        int x = 5;
-        x = 10;
-        "#,
+        // if cond {
+        //     << x
+        // } else {
+        //     << y
+        // int x = 5;
+        // x = 10;
+        // "#,
+        // r#"
+        // list<int> x = {10, 20}
+        // list<float> x = list<float>{10.0}
+        // if x == list<||>{x==4, x==5} {
+        // }
+        // "#,
+        // r#"
+        // int x = 5;
+        // x = list<string>{"hl"};
+        // "#,
         r#"
-        list<int> x = {10, 20}
-        list<float> x = list<float>{10.0}
-        if x == list<||>{x==4, x==5} {
-        }
-        "#,
-        r#"
-        int x = 5;
-        x = list<string>{"hl"};
+        list<||> y = {x == 3, z == 5}
         "#,
     ];
 
     let test_cases = [
+
         r#"
         list<int> x = {1,2,3};
         "#,
@@ -210,10 +214,27 @@ fn main() {
         // <int, float> x = 1
         // "#,
         r#"
-        int x  = 5;
-        if list<||>{x == 4} {
+        bool x = true;
+
+        if x {
+            int z = 4
+             z = 6
         }
-        "#,
+
+         "#, 
+//         r#"
+//         bool x  = true;
+//         int z = 4;
+//         int a = 2;
+//         list<||> y = {a == 2, z == 4}
+//         if x == y {
+
+// }
+//          "#, 
+        // r#"
+        // bool y = true;
+        // if  y == list<||>{3 == 3, 5 == 5} {}
+        // "#,
     ];
 
     for (i, source_code) in test_cases.iter().enumerate() {
@@ -228,12 +249,10 @@ fn main() {
         // }
 
         let mut parser = Parser::new(lexer);
-
         let program = parser.parse_program();
         println!("{:#?}", program);
 
         let mut semantic_analyzer = SemanticAnalyzer::new();
-        
         // Perform semantic analysis and check for errors
         match semantic_analyzer.analyze(&program) {
             Ok(_) => println!("Semantic analysis successful!"),
