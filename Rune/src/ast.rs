@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Type {
     Int,
     String,
@@ -57,6 +57,12 @@ pub struct Declaration {
 }
 
 #[derive(Debug)]
+pub struct Assignment {
+    pub identifier: String,
+    pub value: Expression,
+}
+
+#[derive(Debug)]
 pub struct Parameter {
     pub param_type: Type,
     pub param_name: String,
@@ -105,6 +111,7 @@ pub enum LoopExpr {
 #[derive(Debug)]
 pub enum Statement {
     Declaration(Declaration),
+    Assignment(Assignment),
     Expression(Expression),
     If(IfExpr),
     Loop(LoopExpr),
@@ -112,6 +119,7 @@ pub enum Statement {
     Return(Expression),
     Guard(Expression), // this is just a statement that should break the loop
     Input { var_type: Type, identifier: String, prompt: Option<String> },
+    AssignInput { identifier: String, prompt: Option<String> },
     Output(Expression),
     Do(Expression),
 }
