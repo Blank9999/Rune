@@ -257,6 +257,10 @@ impl<'a> Parser<'a> {
                 self.advance();
                 Type::String
             }
+            Token::VoidType(_) => {
+                self.advance();
+                Type::Void
+            }
             Token::BoolType(_) => {
                 self.advance();
                 Type::Bool
@@ -753,11 +757,19 @@ where
                         
                         if let Token::Symbol(':') = self.current {
                             self.advance();
-                            end_expr = Some(self.parse_expression(0));
+
+                            // end_expr = Some(self.parse_expression(0));
 
                             if let Token::Symbol(':') = self.current {
                                 self.advance();
                                 step_expr = Some(self.parse_expression(0));
+                            } else {
+                                end_expr = Some(self.parse_expression(0));
+
+                                if let Token::Symbol(':') = self.current {
+                                    self.advance();
+                                    step_expr = Some(self.parse_expression(0));
+                                }
                             }
                         }
 
@@ -767,7 +779,7 @@ where
                         Statement::Loop(LoopExpr::Range {
                             var: var_name,
                             start: start_expr,
-                            end: end_expr.expect("Expected end expression"),
+                            end: end_expr,//.expect("Expected end expression"),
                             step: step_expr,
                             body,
                         })

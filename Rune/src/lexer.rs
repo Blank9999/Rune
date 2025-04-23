@@ -21,6 +21,8 @@ pub enum Token {
     BoolType(String),
     CharType(String),
     ErrorType(String),
+    VoidType(String),
+    Semicolon,
     RangeArrow,
     Eof,
     // Error(String),
@@ -193,6 +195,7 @@ impl<'a> Lexer<'a> {
                         "float" => Token::FloatType(ident),
                         "bool" => Token::BoolType(ident),
                         "char" => Token::CharType(ident),
+                        "void" => Token::VoidType(ident),
                         "error" => Token::ErrorType(ident),
                         "list" => {
                             self.in_list += 1;
