@@ -6,6 +6,28 @@ mod semantic_analyzer;
 use crate::lexer::{Lexer, Token}; // Bring Lexer and Token into scope
 use crate::parser::Parser;
 use crate::semantic_analyzer::SemanticAnalyzer;
+use std::io::{self, Write};
+use std::error::Error;
+
+fn read_numbers_from_line() -> Result<Vec<i32>, Box<dyn Error>> {
+    // 1. Prompt the user for input
+    print!("Enter a list of numbers separated by spaces: ");
+    io::stdout().flush()?; // Use ? to propagate potential I/O errors
+
+    // 2. Read the line of input from the user
+    let mut input_string = String::new();
+    io::stdin().read_line(&mut input_string)?; // Use ? to propagate potential I/O errors
+
+    // 3. Process the input string
+    let numbers_list: Vec<i32> = input_string
+        .trim()
+        .split_whitespace()
+        .map(|s| s.parse::<i32>())
+        .collect::<Result<Vec<i32>, _>>()?; // Use ? to propagate the first parsing error
+
+    // 4. If we reached here, parsing was successful
+    Ok(numbers_list) // Return the Vec<i32> wrapped in Ok()
+}
 
 fn main() {
     let test_cases = vec![
@@ -202,62 +224,194 @@ fn main() {
         r#"
         list<int> x = {1,2,3};
         "#,
+
+        // REDECLARATION CHECK
         r#"
         list<int, float> x = {1,2,3};
         list<int, float> x = {1,2,3};
         "#,
+
+        // UNION CHECKS
         r#"
         <int, float> x = 1
         "#,
-        // r#" THIS FAILS FOR SOME REASON?????
+        // r#" 
         // <int, float> x = 1
         // <int, float> x = 1
         // "#,
-        r#"
-        bool x = true;
 
-        if x {
-            int z = 4
-             z = 6
+        // BASIC IF CEHCK
+        r#"
+        int x = 5;
+        if x == 4 {
+            int x = 6;
+        }
+        "#,
+
+        // FUNCTION CHECKS WITH NAME COLLISION & VOID
+        r#"
+        func int get() {
         }
 
-         "#, 
-//         r#"
-//         bool x  = true;
-//         int z = 4;
-//         int a = 2;
-//         list<||> y = {a == 2, z == 4}
-//         if x == y {
+        int x = 4;
+        if x == get() {
+        }
+        "#,
+        r#"
+        func void x() {
+        }
+        int x = 5;
+        "#,
 
-// }
-//          "#, 
-        // r#"
-        // bool y = true;
-        // if  y == list<||>{3 == 3, 5 == 5} {}
-        // "#,
+        // LOOP VARIABLES CHECKS
+        r#"
+        int x = 4
+        loop i -> 0 : x : 1 {
+        }
+        "#,
+
+
+        // ALL LOOP (except foreach) CHECKS
+        r#"
+        loop {
+        }
+        "#,
+
+        r#"
+        loop false{
+        }
+        "#,
+
+        r#"
+        loop i -> 1 : 3 {
+        }
+        "#,
+
+        r#"
+        loop i -> 1 : : 3 {
+        }
+        "#,
+
+        // LIST CONDITIONAL CHECKS
+        r#"
+        bool x = list<||>{3 == 4} || true
+        if x {
+            int x = 5;
+        }
+        "#,
+        r#"
+        list<||> y = list<||>{3 == 4}; 
+        if y && true {
+
+        }
+
+        "#,
+
+        // NESTED FUNCTION & LIST CONDITIONAL CHECK
+        r#"
+        int x = 4;
+        list<||> y = list<||>{3 == 4}; 
+        if y {
+            func int z() {
+            }
+            int x = z();
+        }
+
+        "#,
+        r#"
+        int x = 4;
+        func int x() {
+        }
+
+        "#,
+
+        // I/O CHECKS
+        r#"
+        int x = >> "hello"
+        string x = >> "hello"
+        "#,
+        r#"
+        int x = >> "hello"
+        << x
+        list<int> x = {1, 2}
+        << x
+        "#,
+        r#"
+        << x
+        "#,
+
+        // INTERPOLATION STRING CHECKS
+        r#"
+        string p = "Dog"
+        string x = `create{pet}`
+        "#,
+        r#"
+        string pet = "Dog"
+        string x = `create{pet}`
+        "#,
+
+        // INTERPOLATION FUNCTION LOOP CHECKS
+        r#"
+        list<string> pets = {"Dog", "Cat"}
+        loop pet -> pets {
+            do `create{pet}`
+        }
+        "#,
+        r#"
+        list<string> pets = {"Dog", "Cat"}
+        loop pet -> pets {
+            do `create{pets}`
+        }
+        "#,
+        r#"
+        list<string, int> pets = {"Dog", "Cat", 4}
+        
+        "#,
+
+        // ODD CASE, NEED TO RESOLVE HOW RUNTIME CHECKS WILL BE DONE
+        r#"
+        string x = "hello()"
+        do "x = 4"
+        do x
+        "#,
+
+        // COMMENT CHECK
+        r#"
+        int x = 5 # im a comment
+        "#,
+
     ];
 
+    let numbers_list = read_numbers_from_line().expect("Failed to read or parse numbers");
+    println!("{:?}", &numbers_list);
+
     for (i, source_code) in test_cases.iter().enumerate() {
-        println!("--- Test Case {} ---", i + 1);
-        let mut lexer = Lexer::new(source_code);
-        // loop {
-        //     let token = lexer.next_token();
-        //     println!("{:?}", token);
-        //     if token == Token::Eof {
-        //         break;
-        //     }
-        // }
+        let index = (i + 1) as i32;
+        if numbers_list.contains(&index) || numbers_list.len() == (0 as usize){
+            println!("--- Test Case {} ---", i + 1);
+            println!("{}", source_code);
+            let mut lexer = Lexer::new(source_code);
+            // loop { // PRINT LEXER TOKENIZATION
+            //     let token = lexer.next_token();
+            //     println!("{:?}", token);
+            //     if token == Token::Eof {
+            //         break;
+            //     }
+            // }
 
-        let mut parser = Parser::new(lexer);
-        let program = parser.parse_program();
-        println!("{:#?}", program);
+            let mut parser = Parser::new(lexer);
 
-        let mut semantic_analyzer = SemanticAnalyzer::new();
-        // Perform semantic analysis and check for errors
-        match semantic_analyzer.analyze(&program) {
-            Ok(_) => println!("Semantic analysis successful!"),
-            Err(e) => eprintln!("Semantic analysis failed: {}", e),
+            let program = parser.parse_program();
+            //println!("{:#?}", program); // PRINT AST PARSED
+
+            let mut semantic_analyzer = SemanticAnalyzer::new();
+            
+            // Perform semantic analysis and check for errors
+            match semantic_analyzer.analyze(&program) {
+                Ok(_) => println!("Semantic analysis successful!"),
+                Err(e) => eprintln!("Semantic analysis failed: {}", e),
+            }
+            println!();
         }
-        println!();
     }
 }

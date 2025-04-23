@@ -6,6 +6,7 @@ pub enum Type {
     Float,
     Char,
     Error,
+    Void,
     Custom(String), // for things like List<int>
     List(Vec<Type>), // Dynamic list of allowed types
     FixedList(Vec<Type>, usize), // Fixed-length list
@@ -90,7 +91,7 @@ pub enum LoopExpr {
     Range { // loop i -> 0 : 3 : 1
         var: String,
         start: Expression,
-        end: Expression,
+        end: Option<Expression>,
         step: Option<Expression>,
         body: Vec<Statement>,
     },
