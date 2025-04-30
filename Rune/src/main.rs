@@ -368,6 +368,23 @@ fn main() {
         int x = 5 # im a comment
         "#,
 
+         // FUNCTION CALL BACK CHECK
+         r#"
+         
+         "#,
+
+    ];
+
+    let test_cases = [
+        r#"
+
+         int getX() {
+            int (int x, int y) {
+                return x + y
+            }()
+         }
+         
+         "#,
     ];
 
     let numbers_list = read_numbers_from_line().expect("Failed to read or parse numbers");
@@ -390,7 +407,7 @@ fn main() {
             let mut parser = Parser::new(lexer);
 
             let program = parser.parse_program();
-            //println!("{:#?}", program); // PRINT AST PARSED
+            println!("{:#?}", program); // PRINT AST PARSED
 
             let mut semantic_analyzer = SemanticAnalyzer::new();
             
