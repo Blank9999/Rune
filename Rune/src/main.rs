@@ -389,9 +389,46 @@ fn main() {
 
     let test_cases = [
         r#"
-        if (x == 5) {
-}
+        list<int> x = {1}
+        
         "#,
+
+        r#"
+        list<int> x = {1}
+        func z = int (int x) {
+            int x = 1
+            return x
+        }
+
+        "#,
+
+        r#"
+        int x = 1
+        y = >>
+        <int, float> x = 2;
+
+
+        "#,
+
+        r#"
+        if {
+
+        } else {
+
+        }
+
+        func int z() {
+            int x = 1
+            return x
+        }
+
+        loop {
+            x = 5;
+            y = 2
+        }
+
+        "#,
+
     ];
 
     let numbers_list = read_numbers_from_line().expect("Failed to read or parse numbers");
