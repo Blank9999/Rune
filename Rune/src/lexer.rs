@@ -112,6 +112,7 @@ pub struct Lexer<'a> {
     input: Peekable<Chars<'a>>,
     peeked_token: Option<Token>,
     in_list: usize,
+    add_semicolon: bool,
 }
 
 impl<'a> Lexer<'a> {
@@ -120,6 +121,7 @@ impl<'a> Lexer<'a> {
             input: input.chars().peekable(),
             peeked_token: None,
             in_list: 0,
+            add_semicolon: false,
         }
     }
     
@@ -166,7 +168,15 @@ impl<'a> Lexer<'a> {
         while let Some(&ch) = self.peek_char() {
             // println!("inList: {}", self.in_list);
             match ch {
-                ' ' | '\t' | '\n' | '\r' => { self.next_char(); continue; }
+                '\n' => {
+                    self.next_char(); 
+
+                    if self.add_semicolon {
+                        self.add_semicolon = false;
+                        return Token::Semicolon
+                    }
+                },
+                ' ' | '\t' | '\r' => { self.next_char(); continue; }
                 '0'..='9' => {
                     let val = self.consume_while(|c| c.is_digit(10)).parse().unwrap();
                     if let Some('.') = self.peek_char() {
@@ -190,19 +200,43 @@ impl<'a> Lexer<'a> {
                         "true" => Token::BoolLiteral(true),
                         "false" => Token::BoolLiteral(false),
                         "if" | "elif" | "else" | "loop" | "func" | "" | "return" | "do" => Token::Keyword(ident),
-                        "string" => Token::StringType(ident),
-                        "int" => Token::IntType(ident),
-                        "float" => Token::FloatType(ident),
-                        "bool" => Token::BoolType(ident),
-                        "char" => Token::CharType(ident),
+                        "string" => {
+                            self.add_semicolon = true;
+                            Token::StringType(ident)
+                        },
+                        "int" => {
+                            self.add_semicolon = true;
+                            Token::IntType(ident)
+                        },
+                        "float" => {
+                            self.add_semicolon = true;
+                            Token::FloatType(ident)
+                        },
+                        "bool" => {
+                            self.add_semicolon = true;
+                            Token::BoolType(ident)
+                        },
+                        "char" => {
+                            self.add_semicolon = true;
+                            Token::CharType(ident)
+                        },
                         "void" => Token::VoidType(ident),
                         "error" => Token::ErrorType(ident),
                         "list" => {
+                            self.add_semicolon = true;
                             self.in_list += 1;
                             Token::List(ident)
                         },
-                        _ => Token::Ident(ident),
+                        _ => {
+                            self.add_semicolon = true;
+                            Token::Ident(ident)
+                        },
                     };
+                },
+                ';' => {
+                    self.add_semicolon = false;
+                    self.next_char();
+                    return Token::Semicolon;
                 },
                 '#' => {
                     self.next_char();
@@ -280,6 +314,7 @@ impl<'a> Lexer<'a> {
                     }
                     
                      else if let Some('<') = self.peek_char() {
+                        self.add_semicolon = true;
                         self.next_char();
                         return Token::OutputToken;
                     } 

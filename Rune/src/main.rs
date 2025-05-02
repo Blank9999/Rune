@@ -389,14 +389,11 @@ fn main() {
 
     let test_cases = [
         r#"
-
-         int getX() {
-            int (int x, int y) {
-                return x + y
-            }()
-         }
-         
-         "#,
+            func int z() {
+                int x = nahan
+                y = 5
+            }
+        "#,
     ];
 
     let numbers_list = read_numbers_from_line().expect("Failed to read or parse numbers");
@@ -408,27 +405,27 @@ fn main() {
             println!("--- Test Case {} ---", i + 1);
             println!("{}", source_code);
             let mut lexer = Lexer::new(source_code);
-            // loop { // PRINT LEXER TOKENIZATION
-            //     let token = lexer.next_token();
-            //     println!("{:?}", token);
-            //     if token == Token::Eof {
-            //         break;
-            //     }
-            // }
-
-            let mut parser = Parser::new(lexer);
-
-            let program = parser.parse_program();
-            println!("{:#?}", program); // PRINT AST PARSED
-
-            let mut semantic_analyzer = SemanticAnalyzer::new();
-            
-            // Perform semantic analysis and check for errors
-            match semantic_analyzer.analyze(&program) {
-                Ok(_) => println!("Semantic analysis successful!"),
-                Err(e) => eprintln!("Semantic analysis failed: {}", e),
+            loop { // PRINT LEXER TOKENIZATION
+                let token = lexer.next_token();
+                println!("{:?}", token);
+                if token == Token::Eof {
+                    break;
+                }
             }
-            println!();
+
+            // let mut parser = Parser::new(lexer);
+
+            // let program = parser.parse_program();
+            // println!("{:#?}", program); // PRINT AST PARSED
+
+            // let mut semantic_analyzer = SemanticAnalyzer::new();
+            
+            // // Perform semantic analysis and check for errors
+            // match semantic_analyzer.analyze(&program) {
+            //     Ok(_) => println!("Semantic analysis successful!"),
+            //     Err(e) => eprintln!("Semantic analysis failed: {}", e),
+            // }
+            // println!();
         }
     }
 }
