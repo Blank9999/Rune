@@ -389,8 +389,11 @@ fn main() {
 
     let test_cases = [
         r#"
-        if (x == 5) {
-}
+        list<string> pets = {"Dog", "Cat"}
+        loop pet -> pets {
+            int x = "nahan"
+            do `create{pet}`
+        }
         "#,
     ];
 

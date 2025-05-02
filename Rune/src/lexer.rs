@@ -199,7 +199,11 @@ impl<'a> Lexer<'a> {
                     return match ident.as_str() {
                         "true" => Token::BoolLiteral(true),
                         "false" => Token::BoolLiteral(false),
-                        "if" | "elif" | "else" | "loop" | "func" | "" | "return" | "do" => Token::Keyword(ident),
+                        "if" | "elif" | "else" | "loop" | "func" | "" | "return" => Token::Keyword(ident),
+                        "do" => {
+                            self.add_semicolon = true;
+                            Token::Keyword(ident)
+                        },
                         "string" => {
                             self.add_semicolon = true;
                             Token::StringType(ident)
@@ -346,8 +350,12 @@ impl<'a> Lexer<'a> {
                         return Token::Symbol(self.next_char().unwrap())
                     }
                 },
-                '{' | '}' | '(' | ')' | '[' | ']' | ',' | ':' | '`' => {
+                '{' | '}' => {
                     self.add_semicolon = false;
+                    return Token::Symbol(self.next_char().unwrap())
+                },
+                '(' | ')' | '[' | ']' | ',' | ':' | '`' => {
+                    self.add_semicolon = true;
                     return Token::Symbol(self.next_char().unwrap())
                 },
                 _ => { self.next_char(); continue; }
