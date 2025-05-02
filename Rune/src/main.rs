@@ -389,10 +389,8 @@ fn main() {
 
     let test_cases = [
         r#"
-            func int z() {
-                int x = nahan
-                y = 5
-            }
+        if (x == 5) {
+}
         "#,
     ];
 

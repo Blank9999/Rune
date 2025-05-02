@@ -347,6 +347,7 @@ impl<'a> Lexer<'a> {
                     }
                 },
                 '{' | '}' | '(' | ')' | '[' | ']' | ',' | ':' | '`' => {
+                    self.add_semicolon = false;
                     return Token::Symbol(self.next_char().unwrap())
                 },
                 _ => { self.next_char(); continue; }
