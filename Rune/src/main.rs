@@ -397,18 +397,11 @@ fn main() {
 
     let test_cases = [
         r#"
-        func int get() {
-            return 1
-        }
-
-        int x = 4;
-        if x == get() {
-        }
-        
+         func int get() {
+         }
          
          "#,
     ];
-
     
     let numbers_list = read_numbers_from_line().expect("Failed to read or parse numbers");
     println!("{:?}", &numbers_list);
