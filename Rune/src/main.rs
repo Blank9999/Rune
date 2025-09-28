@@ -399,6 +399,7 @@ fn main() {
     //      "#,
     // ];
 
+    
     let numbers_list = read_numbers_from_line().expect("Failed to read or parse numbers");
     println!("{:?}", &numbers_list);
 
