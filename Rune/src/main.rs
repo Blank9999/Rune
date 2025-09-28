@@ -233,7 +233,7 @@ fn main() {
 
         // UNION CHECKS
         r#"
-        <int, float> x = 1
+        ?int, float? x = 1
         "#,
         // r#" 
         // <int, float> x = 1
@@ -387,14 +387,20 @@ fn main() {
 
     ];
 
-    let test_cases = [
-        r#"
+    // let test_cases = [
+    //     r#"
 
+    //      int getX() {
+    //         int (int x, int y) {
+    //             return x + y
+    //         }()
+    //      }
          list<string, int> pets = {"Dog", "Cat", 4}
          
-         "#,
-    ];
+    //      "#,
+    // ];
 
+    
     let numbers_list = read_numbers_from_line().expect("Failed to read or parse numbers");
     println!("{:?}", &numbers_list);
 
