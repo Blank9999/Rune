@@ -264,7 +264,7 @@ fn main() {
         if x == get() {
         }
         "#,
-        
+
         r#"
         func void x() {
         }
@@ -411,13 +411,14 @@ fn main() {
             println!("--- Test Case {} ---", i + 1);
             println!("{}", source_code);
             let mut lexer = Lexer::new(source_code);
-            // loop { // PRINT LEXER TOKENIZATION
-            //     let token = lexer.next_token();
-            //     println!("{:?}", token);
-            //     if token == Token::Eof {
-            //         break;
-            //     }
-            // }
+            let mut lexer_copy = lexer.clone();
+            loop { // PRINT LEXER TOKENIZATION
+                let token = lexer_copy.next_token();
+                println!("{:?}", token);
+                if token == Token::Eof {
+                    break;
+                }
+            }
 
             let mut parser = Parser::new(lexer);
 

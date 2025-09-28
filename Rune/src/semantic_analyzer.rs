@@ -204,23 +204,34 @@ impl SemanticAnalyzer {
             Statement::If(if_expr) => self.check_if(if_expr),
             Statement::Loop(loop_expr) => self.check_loop(loop_expr),
             Statement::Function(func) => {
-                // Handle nested named functions here
-                 if let Some(name) = &func.name {
-                     let param_types = func.parameters.iter().map(|p| p.param_type.clone()).collect();
-                     let signature = FunctionSignature {
-                         parameter_types: param_types,
-                         return_type: func.return_type.clone(),
-                     };
-                     // Define the named function in the *current* scope where it is declared
-                     self.symbol_table.define_function(name.clone(), signature)?;
-                 } else {
-                     // Handle nested anonymous functions
-                      println!("Warning: Nested anonymous function encountered.");
-                      // TODO: If anonymous functions can be assigned or passed, check that.
-                 }
-                 // Now check the function body and parameters within its own scope
-                 self.check_function_body(func)
-            },
+            // If the function has a name, only define it in the *current* scope
+            // if it doesn't already exist there. This avoids re-defining top-level
+            // functions that were pre-registered in `analyze()`.
+            if let Some(name) = &func.name {
+                // Check current scope only (don't search outer scopes)
+                let current_scope_contains = self
+                    .symbol_table
+                    .scopes
+                    .last()
+                    .expect("No active scope")
+                    .contains_key(name);
+
+                if !current_scope_contains {
+                    let param_types = func.parameters.iter().map(|p| p.param_type.clone()).collect();
+                    let signature = FunctionSignature {
+                        parameter_types: param_types,
+                        return_type: func.return_type.clone(),
+                    };
+                    self.symbol_table.define_function(name.clone(), signature)?;
+                }
+            } else {
+                // Optional: warn about nested anonymous functions
+                println!("Warning: Nested anonymous function encountered.");
+            }
+
+            // Now check the function body (sets up function scope, parameters, etc.)
+            self.check_function(func)
+        },
             Statement::Return(expr) => {
                 let return_type = self.check_expression(expr)?;
                 // TODO: Check if 'return_type' matches the expected return type of the current function
