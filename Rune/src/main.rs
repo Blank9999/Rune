@@ -390,11 +390,7 @@ fn main() {
     let test_cases = [
         r#"
 
-         int getX() {
-            int (int x, int y) {
-                return x + y
-            }()
-         }
+         list<string, int> pets = {"Dog", "Cat", 4}
          
          "#,
     ];
