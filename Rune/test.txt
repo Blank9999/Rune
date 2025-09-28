@@ -201,6 +201,7 @@ Semantic analysis successful!
 --- Test Case 5 ---
 
         func int get() {
+            return 1
         }
 
         int x = 4;
