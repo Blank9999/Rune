@@ -840,10 +840,23 @@ impl SemanticAnalyzer {
                 // For List<Union<T1, T2...>>, a List<U> is compatible if U is compatible with *any* type in the union.
                 // A List<U1, U2...> is compatible with List<T1, T2...> if *every* Ui is compatible with *some* Tj.
                 value_element_types.iter().all(|val_t| {
-                     var_element_types.iter().any(|var_t| {
-                         self.are_types_compatible(var_t, val_t)
-                     })
-                })
+                match val_t {
+                    Type::Union(inner) => {
+                        inner.iter().all(|inner_val_t| {
+                            var_element_types.iter().any(|var_t| {
+                                //println!("Comparing {:?} with {:?}", var_t, inner_val_t);
+                                self.are_types_compatible(var_t, inner_val_t)
+                            })
+                        })
+                    }
+                    _ => {
+                        var_element_types.iter().any(|var_t| {
+                            //println!("Comparing {:?} with {:?}", var_t, val_t);
+                            self.are_types_compatible(var_t, val_t)
+                        })
+                    }
+                }
+            })
             }
             (Type::FixedList(var_element_types, var_size), Type::FixedList(value_element_types, value_size)) => {
                 // Fixed lists must have the same size and compatible element types.

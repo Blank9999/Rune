@@ -1,0 +1,1090 @@
+Enter a list of numbers separated by spaces: []
+--- Test Case 1 ---
+
+        list<int> x = {1,2,3};
+        
+Program {
+    statements: [
+        Declaration(
+            Declaration {
+                var_type: List(
+                    [
+                        Int,
+                    ],
+                ),
+                identifier: "x",
+                value: Literal(
+                    List(
+                        [
+                            Literal(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            Literal(
+                                Int(
+                                    2,
+                                ),
+                            ),
+                            Literal(
+                                Int(
+                                    3,
+                                ),
+                            ),
+                        ],
+                    ),
+                ),
+            },
+        ),
+    ],
+}
+Semantic analysis successful!
+
+--- Test Case 2 ---
+
+        list<int, float> x = {1,2,3};
+        list<int, float> x = {1,2,3};
+        
+Program {
+    statements: [
+        Declaration(
+            Declaration {
+                var_type: List(
+                    [
+                        Int,
+                        Float,
+                    ],
+                ),
+                identifier: "x",
+                value: Literal(
+                    List(
+                        [
+                            Literal(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            Literal(
+                                Int(
+                                    2,
+                                ),
+                            ),
+                            Literal(
+                                Int(
+                                    3,
+                                ),
+                            ),
+                        ],
+                    ),
+                ),
+            },
+        ),
+        Declaration(
+            Declaration {
+                var_type: List(
+                    [
+                        Int,
+                        Float,
+                    ],
+                ),
+                identifier: "x",
+                value: Literal(
+                    List(
+                        [
+                            Literal(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            Literal(
+                                Int(
+                                    2,
+                                ),
+                            ),
+                            Literal(
+                                Int(
+                                    3,
+                                ),
+                            ),
+                        ],
+                    ),
+                ),
+            },
+        ),
+    ],
+}
+Semantic analysis successful!
+
+--- Test Case 3 ---
+
+        ?int, float? x = 1
+        
+Program {
+    statements: [
+        Declaration(
+            Declaration {
+                var_type: Union(
+                    [
+                        Int,
+                        Float,
+                    ],
+                ),
+                identifier: "x",
+                value: Literal(
+                    Int(
+                        1,
+                    ),
+                ),
+            },
+        ),
+    ],
+}
+Semantic analysis successful!
+
+--- Test Case 4 ---
+
+        int x = 5;
+        if x == 4 {
+            int x = 6;
+        }
+        
+It reached here and fifnshed parsing the elif statement
+Program {
+    statements: [
+        Declaration(
+            Declaration {
+                var_type: Int,
+                identifier: "x",
+                value: Literal(
+                    Int(
+                        5,
+                    ),
+                ),
+            },
+        ),
+        If(
+            IfExpr {
+                condition: Single(
+                    BinaryOp(
+                        Identifier(
+                            "x",
+                        ),
+                        "==",
+                        Literal(
+                            Int(
+                                4,
+                            ),
+                        ),
+                    ),
+                ),
+                then_block: [
+                    Declaration(
+                        Declaration {
+                            var_type: Int,
+                            identifier: "x",
+                            value: Literal(
+                                Int(
+                                    6,
+                                ),
+                            ),
+                        },
+                    ),
+                ],
+                elif_blocks: [],
+                else_block: None,
+            },
+        ),
+    ],
+}
+Semantic analysis successful!
+
+--- Test Case 5 ---
+
+        func int get() {
+        }
+
+        int x = 4;
+        if x == get() {
+        }
+        
+It reached here and fifnshed parsing the elif statement
+Program {
+    statements: [
+        Function(
+            Function {
+                return_type: Int,
+                name: Some(
+                    "get",
+                ),
+                parameters: [],
+                body: [],
+            },
+        ),
+        Declaration(
+            Declaration {
+                var_type: Int,
+                identifier: "x",
+                value: Literal(
+                    Int(
+                        4,
+                    ),
+                ),
+            },
+        ),
+        If(
+            IfExpr {
+                condition: Single(
+                    BinaryOp(
+                        Identifier(
+                            "x",
+                        ),
+                        "==",
+                        FunctionCall {
+                            name: "get",
+                            args: [],
+                        },
+                    ),
+                ),
+                then_block: [],
+                elif_blocks: [],
+                else_block: None,
+            },
+        ),
+    ],
+}
+
+--- Test Case 6 ---
+
+        func void x() {
+        }
+        int x = 5;
+        
+Program {
+    statements: [
+        Function(
+            Function {
+                return_type: Void,
+                name: Some(
+                    "x",
+                ),
+                parameters: [],
+                body: [],
+            },
+        ),
+        Declaration(
+            Declaration {
+                var_type: Int,
+                identifier: "x",
+                value: Literal(
+                    Int(
+                        5,
+                    ),
+                ),
+            },
+        ),
+    ],
+}
+
+--- Test Case 7 ---
+
+        int x = 4
+        loop i -> 0 : x : 1 {
+        }
+        
+Program {
+    statements: [
+        Declaration(
+            Declaration {
+                var_type: Int,
+                identifier: "x",
+                value: Literal(
+                    Int(
+                        4,
+                    ),
+                ),
+            },
+        ),
+        Loop(
+            Range {
+                var: "i",
+                start: Literal(
+                    Int(
+                        0,
+                    ),
+                ),
+                end: Some(
+                    Identifier(
+                        "x",
+                    ),
+                ),
+                step: Some(
+                    Literal(
+                        Int(
+                            1,
+                        ),
+                    ),
+                ),
+                body: [],
+            },
+        ),
+    ],
+}
+Semantic analysis successful!
+
+--- Test Case 8 ---
+
+        loop {
+        }
+        
+Program {
+    statements: [
+        Loop(
+            Infinite {
+                body: [],
+            },
+        ),
+    ],
+}
+Semantic analysis successful!
+
+--- Test Case 9 ---
+
+        loop false{
+        }
+        
+Program {
+    statements: [
+        Loop(
+            Condition {
+                condition: [
+                    Single(
+                        Literal(
+                            Bool(
+                                false,
+                            ),
+                        ),
+                    ),
+                ],
+                body: [],
+            },
+        ),
+    ],
+}
+Semantic analysis successful!
+
+--- Test Case 10 ---
+
+        loop i -> 1 : 3 {
+        }
+        
+Program {
+    statements: [
+        Loop(
+            Range {
+                var: "i",
+                start: Literal(
+                    Int(
+                        1,
+                    ),
+                ),
+                end: Some(
+                    Literal(
+                        Int(
+                            3,
+                        ),
+                    ),
+                ),
+                step: None,
+                body: [],
+            },
+        ),
+    ],
+}
+Semantic analysis successful!
+
+--- Test Case 11 ---
+
+        loop i -> 1 : : 3 {
+        }
+        
+Program {
+    statements: [
+        Loop(
+            Range {
+                var: "i",
+                start: Literal(
+                    Int(
+                        1,
+                    ),
+                ),
+                end: None,
+                step: Some(
+                    Literal(
+                        Int(
+                            3,
+                        ),
+                    ),
+                ),
+                body: [],
+            },
+        ),
+    ],
+}
+Warning: Range loop without end expression interpreted as infinite.
+Semantic analysis successful!
+
+--- Test Case 12 ---
+
+        bool x = list<||>{3 == 4} || true
+        if x {
+            int x = 5;
+        }
+        
+It reached here and fifnshed parsing the elif statement
+Program {
+    statements: [
+        Declaration(
+            Declaration {
+                var_type: Bool,
+                identifier: "x",
+                value: ConditionList(
+                    [
+                        Or(
+                            Single(
+                                BinaryOp(
+                                    Literal(
+                                        Int(
+                                            3,
+                                        ),
+                                    ),
+                                    "==",
+                                    Literal(
+                                        Int(
+                                            4,
+                                        ),
+                                    ),
+                                ),
+                            ),
+                            Single(
+                                Literal(
+                                    Bool(
+                                        true,
+                                    ),
+                                ),
+                            ),
+                        ),
+                    ],
+                ),
+            },
+        ),
+        If(
+            IfExpr {
+                condition: Single(
+                    Identifier(
+                        "x",
+                    ),
+                ),
+                then_block: [
+                    Declaration(
+                        Declaration {
+                            var_type: Int,
+                            identifier: "x",
+                            value: Literal(
+                                Int(
+                                    5,
+                                ),
+                            ),
+                        },
+                    ),
+                ],
+                elif_blocks: [],
+                else_block: None,
+            },
+        ),
+    ],
+}
+Semantic analysis successful!
+
+--- Test Case 13 ---
+
+        list<||> y = list<||>{3 == 4}; 
+        if y && true {
+
+        }
+
+        
+It reached here and fifnshed parsing the elif statement
+Program {
+    statements: [
+        Declaration(
+            Declaration {
+                var_type: ConditionList(
+                    "||",
+                ),
+                identifier: "y",
+                value: ConditionList(
+                    [
+                        Single(
+                            BinaryOp(
+                                Literal(
+                                    Int(
+                                        3,
+                                    ),
+                                ),
+                                "==",
+                                Literal(
+                                    Int(
+                                        4,
+                                    ),
+                                ),
+                            ),
+                        ),
+                    ],
+                ),
+            },
+        ),
+        If(
+            IfExpr {
+                condition: Single(
+                    BinaryOp(
+                        Identifier(
+                            "y",
+                        ),
+                        "&&",
+                        Literal(
+                            Bool(
+                                true,
+                            ),
+                        ),
+                    ),
+                ),
+                then_block: [],
+                elif_blocks: [],
+                else_block: None,
+            },
+        ),
+    ],
+}
+Semantic analysis successful!
+
+--- Test Case 14 ---
+
+        int x = 4;
+        list<||> y = list<||>{3 == 4}; 
+        if y {
+            func int z() {
+            }
+            int x = z();
+        }
+
+        
+It reached here and fifnshed parsing the elif statement
+Program {
+    statements: [
+        Declaration(
+            Declaration {
+                var_type: Int,
+                identifier: "x",
+                value: Literal(
+                    Int(
+                        4,
+                    ),
+                ),
+            },
+        ),
+        Declaration(
+            Declaration {
+                var_type: ConditionList(
+                    "||",
+                ),
+                identifier: "y",
+                value: ConditionList(
+                    [
+                        Single(
+                            BinaryOp(
+                                Literal(
+                                    Int(
+                                        3,
+                                    ),
+                                ),
+                                "==",
+                                Literal(
+                                    Int(
+                                        4,
+                                    ),
+                                ),
+                            ),
+                        ),
+                    ],
+                ),
+            },
+        ),
+        If(
+            IfExpr {
+                condition: Single(
+                    Identifier(
+                        "y",
+                    ),
+                ),
+                then_block: [
+                    Function(
+                        Function {
+                            return_type: Int,
+                            name: Some(
+                                "z",
+                            ),
+                            parameters: [],
+                            body: [],
+                        },
+                    ),
+                    Declaration(
+                        Declaration {
+                            var_type: Int,
+                            identifier: "x",
+                            value: FunctionCall {
+                                name: "z",
+                                args: [],
+                            },
+                        },
+                    ),
+                ],
+                elif_blocks: [],
+                else_block: None,
+            },
+        ),
+    ],
+}
+Semantic analysis successful!
+
+--- Test Case 15 ---
+
+        int x = 4;
+        func int x() {
+        }
+
+        
+Program {
+    statements: [
+        Declaration(
+            Declaration {
+                var_type: Int,
+                identifier: "x",
+                value: Literal(
+                    Int(
+                        4,
+                    ),
+                ),
+            },
+        ),
+        Function(
+            Function {
+                return_type: Int,
+                name: Some(
+                    "x",
+                ),
+                parameters: [],
+                body: [],
+            },
+        ),
+    ],
+}
+
+--- Test Case 16 ---
+
+        int x = >> "hello"
+        string x = >> "hello"
+        
+Program {
+    statements: [
+        Input {
+            var_type: Int,
+            identifier: "x",
+            prompt: Some(
+                "hello",
+            ),
+        },
+        Input {
+            var_type: String,
+            identifier: "x",
+            prompt: Some(
+                "hello",
+            ),
+        },
+    ],
+}
+Semantic analysis successful!
+
+--- Test Case 17 ---
+
+        int x = >> "hello"
+        << x
+        list<int> x = {1, 2}
+        << x
+        
+Program {
+    statements: [
+        Input {
+            var_type: Int,
+            identifier: "x",
+            prompt: Some(
+                "hello",
+            ),
+        },
+        Output(
+            Identifier(
+                "x",
+            ),
+        ),
+        Declaration(
+            Declaration {
+                var_type: List(
+                    [
+                        Int,
+                    ],
+                ),
+                identifier: "x",
+                value: Literal(
+                    List(
+                        [
+                            Literal(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            Literal(
+                                Int(
+                                    2,
+                                ),
+                            ),
+                        ],
+                    ),
+                ),
+            },
+        ),
+        Output(
+            Identifier(
+                "x",
+            ),
+        ),
+    ],
+}
+Semantic analysis successful!
+
+--- Test Case 18 ---
+
+        << x
+        
+Program {
+    statements: [
+        Output(
+            Identifier(
+                "x",
+            ),
+        ),
+    ],
+}
+
+--- Test Case 19 ---
+
+        string p = "Dog"
+        string x = `create{pet}`
+        
+Program {
+    statements: [
+        Declaration(
+            Declaration {
+                var_type: String,
+                identifier: "p",
+                value: Literal(
+                    String(
+                        "Dog",
+                    ),
+                ),
+            },
+        ),
+        Declaration(
+            Declaration {
+                var_type: String,
+                identifier: "x",
+                value: InterpolatedString(
+                    [
+                        "create",
+                    ],
+                    [
+                        Identifier(
+                            "pet",
+                        ),
+                    ],
+                ),
+            },
+        ),
+    ],
+}
+
+--- Test Case 20 ---
+
+        string pet = "Dog"
+        string x = `create{pet}`
+        
+Program {
+    statements: [
+        Declaration(
+            Declaration {
+                var_type: String,
+                identifier: "pet",
+                value: Literal(
+                    String(
+                        "Dog",
+                    ),
+                ),
+            },
+        ),
+        Declaration(
+            Declaration {
+                var_type: String,
+                identifier: "x",
+                value: InterpolatedString(
+                    [
+                        "create",
+                    ],
+                    [
+                        Identifier(
+                            "pet",
+                        ),
+                    ],
+                ),
+            },
+        ),
+    ],
+}
+Semantic analysis successful!
+
+--- Test Case 21 ---
+
+        list<string> pets = {"Dog", "Cat"}
+        loop pet -> pets {
+            do `create{pet}`
+        }
+        
+Program {
+    statements: [
+        Declaration(
+            Declaration {
+                var_type: List(
+                    [
+                        String,
+                    ],
+                ),
+                identifier: "pets",
+                value: Literal(
+                    List(
+                        [
+                            Literal(
+                                String(
+                                    "Dog",
+                                ),
+                            ),
+                            Literal(
+                                String(
+                                    "Cat",
+                                ),
+                            ),
+                        ],
+                    ),
+                ),
+            },
+        ),
+        Loop(
+            ForEach {
+                var: "pet",
+                iterable: Identifier(
+                    "pets",
+                ),
+                body: [
+                    Do(
+                        InterpolatedString(
+                            [
+                                "create",
+                            ],
+                            [
+                                Identifier(
+                                    "pet",
+                                ),
+                            ],
+                        ),
+                    ),
+                ],
+            },
+        ),
+    ],
+}
+Semantic analysis successful!
+
+--- Test Case 22 ---
+
+        list<string> pets = {"Dog", "Cat"}
+        loop pet -> pets {
+            do `create{pets}`
+        }
+        
+Program {
+    statements: [
+        Declaration(
+            Declaration {
+                var_type: List(
+                    [
+                        String,
+                    ],
+                ),
+                identifier: "pets",
+                value: Literal(
+                    List(
+                        [
+                            Literal(
+                                String(
+                                    "Dog",
+                                ),
+                            ),
+                            Literal(
+                                String(
+                                    "Cat",
+                                ),
+                            ),
+                        ],
+                    ),
+                ),
+            },
+        ),
+        Loop(
+            ForEach {
+                var: "pet",
+                iterable: Identifier(
+                    "pets",
+                ),
+                body: [
+                    Do(
+                        InterpolatedString(
+                            [
+                                "create",
+                            ],
+                            [
+                                Identifier(
+                                    "pets",
+                                ),
+                            ],
+                        ),
+                    ),
+                ],
+            },
+        ),
+    ],
+}
+
+--- Test Case 23 ---
+
+        list<string, int> pets = {"Dog", "Cat", 4}
+        
+        
+Program {
+    statements: [
+        Declaration(
+            Declaration {
+                var_type: List(
+                    [
+                        String,
+                        Int,
+                    ],
+                ),
+                identifier: "pets",
+                value: Literal(
+                    List(
+                        [
+                            Literal(
+                                String(
+                                    "Dog",
+                                ),
+                            ),
+                            Literal(
+                                String(
+                                    "Cat",
+                                ),
+                            ),
+                            Literal(
+                                Int(
+                                    4,
+                                ),
+                            ),
+                        ],
+                    ),
+                ),
+            },
+        ),
+    ],
+}
+Semantic analysis successful!
+
+--- Test Case 24 ---
+
+        string x = "hello()"
+        do "x = 4"
+        do x
+        
+Program {
+    statements: [
+        Declaration(
+            Declaration {
+                var_type: String,
+                identifier: "x",
+                value: Literal(
+                    String(
+                        "hello()",
+                    ),
+                ),
+            },
+        ),
+        Do(
+            Literal(
+                String(
+                    "x = 4",
+                ),
+            ),
+        ),
+        Do(
+            Identifier(
+                "x",
+            ),
+        ),
+    ],
+}
+Semantic analysis successful!
+
+--- Test Case 25 ---
+
+        int x = 5 # im a comment
+        
+Program {
+    statements: [
+        Declaration(
+            Declaration {
+                var_type: Int,
+                identifier: "x",
+                value: Literal(
+                    Int(
+                        5,
+                    ),
+                ),
+            },
+        ),
+    ],
+}
+Semantic analysis successful!
+
+--- Test Case 26 ---
+
+         
+         
+Program {
+    statements: [],
+}
+Semantic analysis successful!
+
