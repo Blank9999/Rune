@@ -391,12 +391,9 @@ fn main() {
     let test_cases = [
         r#"
         func int get() {
-            return 1
         }
 
         int x = 4;
-        if x == get() {
-        }
         
          
          "#,

@@ -816,6 +816,28 @@ impl SemanticAnalyzer {
             self.check_statement(stmt)?;
         }
 
+        // --- NEW: return-presence and return-completeness checks ---
+        // Helper: detect whether the type is "void-like". Adjust names if your Type enum uses a different variant.
+        let is_void = matches!(func.return_type, Type::Void | Type::Error);
+
+        // Require at least one return for non-void functions.
+        if !is_void {
+            if !self.block_contains_return(&func.body) {
+                return Err(format!(
+                    "Function {:?} declared non-void but contains no return statements.",
+                    func.name.as_deref().unwrap_or("<anonymous>")
+                ));
+            }
+
+            // Optionally: require that all code paths return (no fall-through).
+            if !self.block_always_returns(&func.body) {
+                return Err(format!(
+                    "Function {:?} may fall off the end without returning on some control-flow paths.",
+                    func.name.as_deref().unwrap_or("<anonymous>")
+                ));
+            }
+        }
+
         self.symbol_table.exit_scope();
 
         // TODO: Restore the original return type after exiting the function.
@@ -963,6 +985,128 @@ impl SemanticAnalyzer {
              _ => false, // No other types are comparable with each other directly (e.g., Int vs String)
          }
      }
+
+     fn block_contains_return(&mut self, stmts: &[Statement]) -> bool {
+        for stmt in stmts {
+            match stmt {
+                Statement::Return(_) => return true,
+                Statement::If(if_expr) => {
+                    // check then / elifs / else recursively
+                    if self.block_contains_return(&if_expr.then_block) {
+                        return true;
+                    }
+                    for (_cond, block) in &if_expr.elif_blocks {
+                        if self.block_contains_return(block) {
+                            return true;
+                        }
+                    }
+                    if let Some(else_block) = &if_expr.else_block {
+                        if self.block_contains_return(else_block) {
+                            return true;
+                        }
+                    }
+                }
+                Statement::Function(func) => {
+                    // Don't dive into nested function bodies for this function's returns.
+                    // Returns inside nested functions do not count for the outer function.
+                    let _ = func; // explicitly ignore
+                }
+                Statement::Loop(loop_expr) => {
+                    // A return inside a loop *may* exist; but since loops may not run
+                    // we still count such returns as "exists somewhere".
+                    match loop_expr {
+                        LoopExpr::Range { body, .. } 
+                        | LoopExpr::Infinite { body }
+                        | LoopExpr::ForEach { body, .. }
+                        | LoopExpr::Condition { body, .. } => {
+                            if self.block_contains_return(body) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+                // For other compound statements (e.g., Declaration with initializer expression containing
+                // nested expressions that might be function calls) we don't check here — only statement-level returns.
+                _ => {}
+            }
+        }
+        false
+    }
+
+    /// Conservative "definite return" analysis:
+    /// Returns true if the statement sequence *always* results in a return (i.e., all execution paths return).
+    ///
+    /// Rules (conservative):
+    /// - A `return` statement makes the remainder unreachable → sequence returns.
+    /// - An `if` statement only definitely returns if:
+    ///     * there is an `else` block, and every (then + each elif + else) definitely returns.
+    /// - Loops are NOT assumed to definitely return (unless you want to add more advanced analysis).
+    /// - Other statements do not force a return.
+    fn block_always_returns(&mut self, stmts: &[Statement]) -> bool {
+        let mut idx = 0;
+        while idx < stmts.len() {
+            match &stmts[idx] {
+                Statement::Return(_) => {
+                    return true; // execution returns here and subsequent statements unreachable
+                }
+                Statement::If(if_expr) => {
+                    // The if-statement definitely returns iff:
+                    // - it has an else block, and
+                    // - then_block always returns, and each elif's block always returns, and else_block always returns.
+                    let then_returns = self.block_always_returns(&if_expr.then_block);
+                    if !then_returns {
+                        // then branch might fall-through -> the if can't guarantee a return
+                        idx += 1;
+                        continue;
+                    }
+
+                    let mut all_elifs_return = true;
+                    for (_cond, block) in &if_expr.elif_blocks {
+                        if !self.block_always_returns(block) {
+                            all_elifs_return = false;
+                            break;
+                        }
+                    }
+
+                    if !all_elifs_return {
+                        idx += 1;
+                        continue;
+                    }
+
+                    match &if_expr.else_block {
+                        Some(else_block) => {
+                            if self.block_always_returns(else_block) {
+                                // this if statement causes a definite return
+                                return true;
+                            } else {
+                                idx += 1;
+                                continue;
+                            }
+                        }
+                        None => {
+                            // no else → not guaranteed to return
+                            idx += 1;
+                            continue;
+                        }
+                    }
+                }
+                Statement::Loop(_loop_expr) => {
+                    // conservative: loops do not guarantee a return because they may not execute
+                    idx += 1;
+                }
+                Statement::Function(_) => {
+                    // nested function: ignore as it does not affect outer control flow
+                    idx += 1;
+                }
+                _ => {
+                    // other statements (declaration, assignment, output, etc.) do not
+                    // cause definite return; continue scanning
+                    idx += 1;
+                }
+            }
+        }
+        false
+    }
 }
 
 // Example Usage (in your main.rs or lib.rs)
