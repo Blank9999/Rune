@@ -844,14 +844,14 @@ impl SemanticAnalyzer {
                     Type::Union(inner) => {
                         inner.iter().all(|inner_val_t| {
                             var_element_types.iter().any(|var_t| {
-                                println!("Comparing {:?} with {:?}", var_t, inner_val_t);
+                                //println!("Comparing {:?} with {:?}", var_t, inner_val_t);
                                 self.are_types_compatible(var_t, inner_val_t)
                             })
                         })
                     }
                     _ => {
                         var_element_types.iter().any(|var_t| {
-                            println!("Comparing {:?} with {:?}", var_t, val_t);
+                            //println!("Comparing {:?} with {:?}", var_t, val_t);
                             self.are_types_compatible(var_t, val_t)
                         })
                     }

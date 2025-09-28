@@ -257,6 +257,7 @@ fn main() {
         if x == get() {
         }
         "#,
+        
         r#"
         func void x() {
         }
@@ -389,13 +390,7 @@ fn main() {
 
     // let test_cases = [
     //     r#"
-
-    //      int getX() {
-    //         int (int x, int y) {
-    //             return x + y
-    //         }()
-    //      }
-         list<string, int> pets = {"Dog", "Cat", 4}
+    //      list<string, int> pets = {"Dog", "Cat", 4}
          
     //      "#,
     // ];
@@ -428,7 +423,7 @@ fn main() {
             // Perform semantic analysis and check for errors
             match semantic_analyzer.analyze(&program) {
                 Ok(_) => println!("Semantic analysis successful!"),
-                Err(e) => eprintln!("Semantic analysis failed: {}", e),
+                Err(e) => eprintln!("Semantic analysis failed {}: {}", i+1, e),
             }
             println!();
         }
