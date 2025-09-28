@@ -88,7 +88,11 @@ impl<'a> Parser<'a> {
                 self.parse_declaration()
             }
 
-            Token::List(_) | Token::Operator(Operator::Comparison(ComparisonOperator::LessThan)) => {
+            // Token::List(_) | Token::Operator(Operator::Comparison(ComparisonOperator::LessThan)) => {
+            //     self.parse_declaration()
+            // }
+
+            Token::List(_) | Token::Operator(Operator::Comparison(ComparisonOperator::Question)) => {
                 self.parse_declaration()
             }
 
@@ -275,14 +279,26 @@ impl<'a> Parser<'a> {
             }
 
             // Union type: <int, string, float>
-            Token::Operator(Operator::Comparison(ComparisonOperator::LessThan)) => {
+            // Token::Operator(Operator::Comparison(ComparisonOperator::LessThan)) => {
+            //     self.advance(); // consume '<'
+            //     let mut types = vec![self.parse_type()];
+            //     while let Token::Symbol(',') = self.current {
+            //         self.advance();
+            //         types.push(self.parse_type());
+            //     }
+            //     self.expect(&Token::Operator(Operator::Comparison(ComparisonOperator::GreaterThan)));
+            //     Type::Union(types)
+            // }
+
+
+            Token::Operator(Operator::Comparison(ComparisonOperator::Question)) => {
                 self.advance(); // consume '<'
                 let mut types = vec![self.parse_type()];
                 while let Token::Symbol(',') = self.current {
                     self.advance();
                     types.push(self.parse_type());
                 }
-                self.expect(&Token::Operator(Operator::Comparison(ComparisonOperator::GreaterThan)));
+                self.expect(&Token::Operator(Operator::Comparison(ComparisonOperator::Question)));
                 Type::Union(types)
             }
 
@@ -419,6 +435,20 @@ impl<'a> Parser<'a> {
 
                 self.parse_prefix()
             }
+
+            // Token::Operator(Operator::Comparison(ComparisonOperator::Question)) => {
+            //     self.advance(); // consume the <
+            //     while self.current != Token::Operator(Operator::Comparison(ComparisonOperator::Question)) {
+            //         self.advance();
+            //         if self.current == Token::Eof {
+            //             panic!("Expected '{{' for inline list literal, but reached EOF");
+            //         }
+            //     }
+
+            //     self.advance();
+
+            //     self.parse_prefix()
+            // }
             Token::List(_) => {
                 self.advance(); // consume the Token::List
                 while self.current != Token::Operator(Operator::Comparison(ComparisonOperator::GreaterThan)) {

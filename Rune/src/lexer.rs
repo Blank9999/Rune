@@ -1,6 +1,6 @@
 use std::str::Chars;
 use std::iter::Peekable;
-use std::fmt;
+use std::fmt::{self, write};
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Token {
@@ -53,6 +53,7 @@ pub enum ComparisonOperator {
     GreaterThan, // ">"
     LessThanOrEqual, // <= 
     GreaterThanOrEqual, // ">="
+    Question, // "?"
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -93,6 +94,7 @@ impl fmt::Display for ComparisonOperator {
             ComparisonOperator::GreaterThan => write!(f, ">"),
             ComparisonOperator::LessThanOrEqual => write!(f, "<="),
             ComparisonOperator::GreaterThanOrEqual => write!(f, ">="),
+            ComparisonOperator::Question => write!(f, "?"),
         }
     }
 }
@@ -215,6 +217,10 @@ impl<'a> Lexer<'a> {
                         return Token::Operator(Operator::Comparison(ComparisonOperator::Equal))
                     }
                     return Token::Assignment("=".into())
+                },
+                '?' => {
+                    self.next_char();
+                    return Token::Operator(Operator::Comparison(ComparisonOperator::Question))
                 },
                 '\'' => {
                     self.next_char();
