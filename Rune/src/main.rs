@@ -233,7 +233,14 @@ fn main() {
 
         // UNION CHECKS
         r#"
+        int y = 4
         ?int, float? x = 1
+        "#,
+
+
+        r#"
+        int x = 2
+        int y = 40
         "#,
         // r#" 
         // <int, float> x = 1
