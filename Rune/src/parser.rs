@@ -1,4 +1,4 @@
-use crate::lexer::{Lexer, Token,Operator,ComparisonOperator,LogicalOperator, ArithmeticOperator};
+use crate::lexer::{ArithmeticOperator, ComparisonOperator, Lexer, LogicalOperator, Operator, Token, TypeOperator};
 use crate::ast::{
     Type, Literal, Expression, Declaration, Assignment, Program, Statement, IfExpr, LoopExpr,
     Function, Parameter,Condition
@@ -92,7 +92,12 @@ impl<'a> Parser<'a> {
             //     self.parse_declaration()
             // }
 
-            Token::List(_) | Token::Operator(Operator::Comparison(ComparisonOperator::Question)) => {
+            // Token::List(_) | Token::Operator(Operator::Comparison(ComparisonOperator::Question)) => {
+            //     self.parse_declaration()
+            // }
+
+
+            Token::List(_) | Token::Operator(Operator::Type(TypeOperator::Question)) => {
                 self.parse_declaration()
             }
 
@@ -291,14 +296,25 @@ impl<'a> Parser<'a> {
             // }
 
 
-            Token::Operator(Operator::Comparison(ComparisonOperator::Question)) => {
+            // Token::Operator(Operator::Comparison(ComparisonOperator::Question)) => {
+            //     self.advance(); // consume '<'
+            //     let mut types = vec![self.parse_type()];
+            //     while let Token::Symbol(',') = self.current {
+            //         self.advance();
+            //         types.push(self.parse_type());
+            //     }
+            //     self.expect(&Token::Operator(Operator::Comparison(ComparisonOperator::Question)));
+            //     Type::Union(types)
+            // }
+
+            Token::Operator(Operator::Type(TypeOperator::Question)) => {
                 self.advance(); // consume '<'
                 let mut types = vec![self.parse_type()];
                 while let Token::Symbol(',') = self.current {
                     self.advance();
                     types.push(self.parse_type());
                 }
-                self.expect(&Token::Operator(Operator::Comparison(ComparisonOperator::Question)));
+                self.expect(&Token::Operator(Operator::Type(TypeOperator::Question)));
                 Type::Union(types)
             }
 

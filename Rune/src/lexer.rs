@@ -35,6 +35,7 @@ pub enum Operator {
     Arithmetic(ArithmeticOperator),
     Comparison(ComparisonOperator),
     Logical(LogicalOperator),
+    Type(TypeOperator),
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -53,7 +54,7 @@ pub enum ComparisonOperator {
     GreaterThan, // ">"
     LessThanOrEqual, // <= 
     GreaterThanOrEqual, // ">="
-    Question, // "?"
+    // Question, // "?"
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -61,6 +62,12 @@ pub enum LogicalOperator {
     And,       // "&&"
     Or,        // "||"
     Not,      // !
+}
+
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum TypeOperator {
+    Question, // "?"
 }
 
 impl fmt::Display for ArithmeticOperator {
@@ -94,7 +101,15 @@ impl fmt::Display for ComparisonOperator {
             ComparisonOperator::GreaterThan => write!(f, ">"),
             ComparisonOperator::LessThanOrEqual => write!(f, "<="),
             ComparisonOperator::GreaterThanOrEqual => write!(f, ">="),
-            ComparisonOperator::Question => write!(f, "?"),
+            // ComparisonOperator::Question => write!(f, "?"),
+        }
+    }
+}
+
+impl fmt::Display for TypeOperator {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            TypeOperator::Question => write!(f, "?"),
         }
     }
 }
@@ -105,6 +120,7 @@ impl fmt::Display for Operator {
             Operator::Arithmetic(op) => write!(f, "{}", op),
             Operator::Logical(op) => write!(f, "{}", op),
             Operator::Comparison(op) => write!(f, "{}", op),
+            Operator::Type(op) => write!(f, "{}", op),
         }
     }
 }
@@ -220,7 +236,8 @@ impl<'a> Lexer<'a> {
                 },
                 '?' => {
                     self.next_char();
-                    return Token::Operator(Operator::Comparison(ComparisonOperator::Question))
+                    // return Token::Operator(Operator::Comparison(ComparisonOperator::Question))
+                    return Token::Operator((Operator::Type((TypeOperator::Question))))
                 },
                 '\'' => {
                     self.next_char();

@@ -233,7 +233,14 @@ fn main() {
 
         // UNION CHECKS
         r#"
+        int y = 4
         ?int, float? x = 1
+        "#,
+
+
+        r#"
+        int x = 2
+        int y = 40
         "#,
         // r#" 
         // <int, float> x = 1
@@ -391,9 +398,12 @@ fn main() {
     let test_cases = [
         r#"
         func int get() {
+            return 1
         }
 
         int x = 4;
+        if x == get() {
+        }
         
          
          "#,
