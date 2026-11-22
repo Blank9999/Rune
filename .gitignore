@@ -1,1 +1,16 @@
 Rune/target/
+.DS_Store
+Rune/.env
+Rune/.env.*
+!Rune/.env.example
+Rune/src/backend_tests.rs
+Rune/src/frontend_tests.rs
+Rune/tests/
+Rune/*.trace.html
+Rune/demo
+Rune/example
+Rune/hello
+Rune/demo.rune
+Rune/example.rune
+Rune/hello.rune
+Rune/visualizer_demo.rune
