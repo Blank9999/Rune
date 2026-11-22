@@ -1,4 +1,6 @@
-#[derive(Debug)]
+use crate::error::Span;
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum Type {
     Int,
     String,
@@ -6,11 +8,12 @@ pub enum Type {
     Float,
     Char,
     Error,
-    Custom(String), // for things like List<int>
-    List(Vec<Type>), // Dynamic list of allowed types
+    Void,
+    Custom(String),              // for things like List<int>
+    List(Vec<Type>),             // Dynamic list of allowed types
     FixedList(Vec<Type>, usize), // Fixed-length list
     ConditionList(String),
-    ConditionFixedList(String,usize),
+    ConditionFixedList(String, usize),
     // ConditionList(Vec<Condition>),
     // ConditionFixedList(Vec<Condition>,usize),
     Union(Vec<Type>), // Union of types like <int, string>
@@ -57,6 +60,12 @@ pub struct Declaration {
 }
 
 #[derive(Debug)]
+pub struct Assignment {
+    pub identifier: String,
+    pub value: Expression,
+}
+
+#[derive(Debug)]
 pub struct Parameter {
     pub param_type: Type,
     pub param_name: String,
@@ -81,22 +90,26 @@ pub struct IfExpr {
 
 #[derive(Debug)]
 pub enum LoopExpr {
-    Range { // loop i -> 0 : 3 : 1
+    Range {
+        // loop i -> 0 : 3 : 1
         var: String,
         start: Expression,
-        end: Expression,
+        end: Option<Expression>,
         step: Option<Expression>,
         body: Vec<Statement>,
     },
-    Infinite { // loop {}
+    Infinite {
+        // loop {}
         body: Vec<Statement>,
     },
-    ForEach { // loop num -> nums {}
+    ForEach {
+        // loop num -> nums {}
         var: String,
         iterable: Expression,
         body: Vec<Statement>,
     },
-    Condition { // loop x < 3 {}
+    Condition {
+        // loop x < 3 {}
         condition: Vec<Condition>,
         body: Vec<Statement>,
     },
@@ -104,14 +117,24 @@ pub enum LoopExpr {
 
 #[derive(Debug)]
 pub enum Statement {
+    Located(Box<Statement>, Span),
     Declaration(Declaration),
+    Assignment(Assignment),
     Expression(Expression),
     If(IfExpr),
     Loop(LoopExpr),
     Function(Function),
     Return(Expression),
     Guard(Expression), // this is just a statement that should break the loop
-    Input { var_type: Type, identifier: String, prompt: Option<String> },
+    Input {
+        var_type: Type,
+        identifier: String,
+        prompt: Option<String>,
+    },
+    AssignInput {
+        identifier: String,
+        prompt: Option<String>,
+    },
     Output(Expression),
     Do(Expression),
 }

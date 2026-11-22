@@ -1,6 +1,12 @@
 [package]
-name = "Rune"
+name = "rune"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+ariadne = "0.5"
+serde_json = "1.0"
+
+[[bin]]
+name = "rune"
+path = "src/main.rs"
