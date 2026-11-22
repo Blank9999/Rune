@@ -115,7 +115,8 @@ impl CodeGenerator {
                     .parameters
                     .iter()
                     .any(|p| !is_codegen_type(&p.param_type))
-                    || !is_codegen_type(&function.return_type)
+                    || (function.return_type != Type::Void
+                        && !is_codegen_type(&function.return_type))
                 {
                     return Err(codegen_error(
                         "function signature uses a type not supported by this backend",
@@ -197,8 +198,10 @@ impl CodeGenerator {
              declare i32 @scanf(ptr, ...)\n\
              declare i32 @getchar()\n\
              declare i32 @putchar(i32)\n\
+             declare ptr @malloc(i64)\n\
              declare void @llvm.trap()\n\n",
         );
+        output.push_str("%RuneValue = type { i32, i64 }\n%RuneList = type { i64, ptr }\n\n");
         for name in global_order {
             let global = globals.get(&name).expect("global was registered");
             output.push_str(&format!(
@@ -212,7 +215,9 @@ impl CodeGenerator {
         output.push_str(&generated_functions);
         output.push_str(&generated_main);
         output.push_str(&char_runtime_ir());
+        output.push_str(&list_runtime_ir());
         output.push_str(&strings.globals());
+        output.push_str(list_runtime_globals());
         Ok(output)
     }
 }
@@ -236,10 +241,22 @@ fn statement_span(statement: &Statement) -> Span {
 }
 
 fn is_codegen_type(ty: &Type) -> bool {
-    matches!(
-        ty,
-        Type::Int | Type::String | Type::Bool | Type::Float | Type::Char | Type::Void
-    )
+    match ty {
+        Type::Int | Type::String | Type::Bool | Type::Float | Type::Char => true,
+        Type::List(elements) | Type::FixedList(elements, _) => {
+            !elements.is_empty()
+                && elements
+                    .iter()
+                    .all(|ty| is_codegen_type(ty) && *ty != Type::Void)
+        }
+        Type::Union(types) => {
+            !types.is_empty()
+                && types
+                    .iter()
+                    .all(|ty| is_codegen_type(ty) && *ty != Type::Void)
+        }
+        _ => false,
+    }
 }
 
 fn llvm_type(ty: &Type) -> Result<&'static str, Diagnostic> {
@@ -249,6 +266,8 @@ fn llvm_type(ty: &Type) -> Result<&'static str, Diagnostic> {
         Type::Float => Ok("double"),
         Type::Char => Ok("i32"),
         Type::String => Ok("ptr"),
+        Type::List(_) | Type::FixedList(_, _) => Ok("ptr"),
+        Type::Union(_) => Ok("%RuneValue"),
         Type::Void => Ok("void"),
         other => Err(codegen_error(
             format!("type {:?} cannot be represented by this backend", other),
@@ -259,7 +278,8 @@ fn llvm_type(ty: &Type) -> Result<&'static str, Diagnostic> {
 
 fn zero_value(ty: &Type) -> Result<&'static str, Diagnostic> {
     match ty {
-        Type::String => Ok("null"),
+        Type::String | Type::List(_) | Type::FixedList(_, _) => Ok("null"),
+        Type::Union(_) => Ok("zeroinitializer"),
         Type::Float => Ok("0.000000e+00"),
         Type::Void => Err(codegen_error(
             "void values cannot be stored",
@@ -404,6 +424,101 @@ read.four:
   ret i32 %v3
 replacement:
   ret i32 65533
+}
+"#
+}
+
+fn list_runtime_globals() -> &'static str {
+    "@.rune.list.int = private unnamed_addr constant [5 x i8] c\"%lld\\00\"\n\
+     @.rune.list.float = private unnamed_addr constant [3 x i8] c\"%g\\00\"\n\
+     @.rune.list.string.fmt = private unnamed_addr constant [3 x i8] c\"%s\\00\"\n\
+     @.rune.list.true = private unnamed_addr constant [5 x i8] c\"true\\00\"\n\
+     @.rune.list.false = private unnamed_addr constant [6 x i8] c\"false\\00\"\n\
+     @.rune.list.unknown = private unnamed_addr constant [10 x i8] c\"<invalid>\\00\"\n"
+}
+
+fn list_runtime_ir() -> &'static str {
+    r#"
+define internal void @rune.print.value(%RuneValue %value) {
+entry:
+  %tag = extractvalue %RuneValue %value, 0
+  switch i32 %tag, label %unknown [
+    i32 1, label %integer
+    i32 2, label %string
+    i32 3, label %boolean
+    i32 4, label %float
+    i32 5, label %character
+    i32 6, label %list
+  ]
+integer:
+  %int.bits = extractvalue %RuneValue %value, 1
+  %int.fmt = getelementptr inbounds [5 x i8], ptr @.rune.list.int, i64 0, i64 0
+  %int.printed = call i32 (ptr, ...) @printf(ptr %int.fmt, i64 %int.bits)
+  br label %done
+string:
+  %string.bits = extractvalue %RuneValue %value, 1
+  %string.ptr = inttoptr i64 %string.bits to ptr
+  %string.printed = call i32 (ptr, ...) @printf(ptr @.rune.list.string.fmt, ptr %string.ptr)
+  br label %done
+boolean:
+  %bool.bits = extractvalue %RuneValue %value, 1
+  %bool.value = icmp ne i64 %bool.bits, 0
+  %true.ptr = getelementptr inbounds [5 x i8], ptr @.rune.list.true, i64 0, i64 0
+  %false.ptr = getelementptr inbounds [6 x i8], ptr @.rune.list.false, i64 0, i64 0
+  %bool.ptr = select i1 %bool.value, ptr %true.ptr, ptr %false.ptr
+  %bool.printed = call i32 (ptr, ...) @printf(ptr @.rune.list.string.fmt, ptr %bool.ptr)
+  br label %done
+float:
+  %float.bits = extractvalue %RuneValue %value, 1
+  %float.value = bitcast i64 %float.bits to double
+  %float.fmt = getelementptr inbounds [3 x i8], ptr @.rune.list.float, i64 0, i64 0
+  %float.printed = call i32 (ptr, ...) @printf(ptr %float.fmt, double %float.value)
+  br label %done
+character:
+  %char.bits = extractvalue %RuneValue %value, 1
+  %char.value = trunc i64 %char.bits to i32
+  call void @rune.print.char(i32 %char.value)
+  br label %done
+list:
+  %list.bits = extractvalue %RuneValue %value, 1
+  %list.ptr = inttoptr i64 %list.bits to ptr
+  call void @rune.print.list(ptr %list.ptr)
+  br label %done
+unknown:
+  call i32 (ptr, ...) @printf(ptr @.rune.list.unknown)
+  br label %done
+done:
+  ret void
+}
+
+define internal void @rune.print.list(ptr %list) {
+entry:
+  %open = call i32 @putchar(i32 91)
+  %length.ptr = getelementptr inbounds %RuneList, ptr %list, i32 0, i32 0
+  %length = load i64, ptr %length.ptr
+  %data.ptr = getelementptr inbounds %RuneList, ptr %list, i32 0, i32 1
+  %data = load ptr, ptr %data.ptr
+  br label %loop
+loop:
+  %index = phi i64 [ 0, %entry ], [ %next.index, %element ]
+  %more = icmp ult i64 %index, %length
+  br i1 %more, label %separator, label %close
+separator:
+  %has.previous = icmp ugt i64 %index, 0
+  br i1 %has.previous, label %comma, label %element
+comma:
+  %comma.printed = call i32 @putchar(i32 44)
+  %space.printed = call i32 @putchar(i32 32)
+  br label %element
+element:
+  %item.ptr = getelementptr inbounds %RuneValue, ptr %data, i64 %index
+  %item = load %RuneValue, ptr %item.ptr
+  call void @rune.print.value(%RuneValue %item)
+  %next.index = add i64 %index, 1
+  br label %loop
+close:
+  %closed = call i32 @putchar(i32 93)
+  ret void
 }
 "#
 }
@@ -571,11 +686,112 @@ impl<'g, 'a> FunctionEmitter<'g, 'a> {
                     operand: result,
                 })
             }
+            (Type::List(_), Type::List(_))
+            | (Type::List(_), Type::FixedList(_, _))
+            | (Type::FixedList(_, _), Type::List(_))
+            | (Type::FixedList(_, _), Type::FixedList(_, _)) => Ok(Value {
+                ty: expected.clone(),
+                operand: value.operand,
+            }),
+            (_, Type::Union(types)) if types.iter().any(|ty| *ty == value.ty) => {
+                let mut packed = self.pack_union(value)?;
+                packed.ty = expected.clone();
+                Ok(packed)
+            }
             _ => Err(self.error(format!(
                 "cannot lower conversion from {:?} to {:?}",
                 value.ty, expected
             ))),
         }
+    }
+
+    fn union_tag(ty: &Type) -> Option<i32> {
+        match ty {
+            Type::Int => Some(1),
+            Type::String => Some(2),
+            Type::Bool => Some(3),
+            Type::Float => Some(4),
+            Type::Char => Some(5),
+            Type::List(_) | Type::FixedList(_, _) => Some(6),
+            _ => None,
+        }
+    }
+
+    fn pack_union(&mut self, value: Value) -> Result<Value, Diagnostic> {
+        if matches!(value.ty, Type::Union(_)) {
+            return Ok(value);
+        }
+        let tag = Self::union_tag(&value.ty)
+            .ok_or_else(|| self.error(format!("cannot store {:?} in a union", value.ty)))?;
+        let payload = self.fresh_temp();
+        let conversion = match value.ty {
+            Type::Int => format!("add i64 {}, 0", value.operand),
+            Type::Bool => format!("zext i1 {} to i64", value.operand),
+            Type::Char => format!("zext i32 {} to i64", value.operand),
+            Type::Float => format!("bitcast double {} to i64", value.operand),
+            Type::String | Type::List(_) | Type::FixedList(_, _) => {
+                format!("ptrtoint ptr {} to i64", value.operand)
+            }
+            _ => return Err(self.error("unsupported union member type")),
+        };
+        self.emit(format!("{payload} = {conversion}"));
+        let first = self.fresh_temp();
+        self.emit(format!(
+            "{first} = insertvalue %RuneValue zeroinitializer, i32 {tag}, 0"
+        ));
+        let result = self.fresh_temp();
+        self.emit(format!(
+            "{result} = insertvalue %RuneValue {first}, i64 {payload}, 1"
+        ));
+        Ok(Value {
+            ty: Type::Union(vec![value.ty]),
+            operand: result,
+        })
+    }
+
+    fn unpack_union(&mut self, value: Value, target: &Type) -> Result<Value, Diagnostic> {
+        if target == &value.ty {
+            return Ok(value);
+        }
+        let tag = Self::union_tag(target)
+            .ok_or_else(|| self.error(format!("cannot unpack union as {:?}", target)))?;
+        let actual_tag = self.fresh_temp();
+        self.emit(format!(
+            "{actual_tag} = extractvalue %RuneValue {}, 0",
+            value.operand
+        ));
+        let valid = self.fresh_temp();
+        self.emit(format!("{valid} = icmp eq i32 {actual_tag}, {tag}"));
+        let ok = self.fresh_label("union.type.ok");
+        let bad = self.fresh_label("union.type.bad");
+        self.emit(format!("br i1 {valid}, label %{ok}, label %{bad}"));
+        self.terminated = true;
+        self.begin_block(&bad);
+        self.emit("call void @llvm.trap()");
+        self.emit("unreachable");
+        self.terminated = true;
+        self.begin_block(&ok);
+        let payload = self.fresh_temp();
+        self.emit(format!(
+            "{payload} = extractvalue %RuneValue {}, 1",
+            value.operand
+        ));
+        let result = self.fresh_temp();
+        let conversion = match target {
+            Type::Int => format!("add i64 {payload}, 0"),
+            Type::Bool => format!("trunc i64 {payload} to i1"),
+            Type::Char => format!("trunc i64 {payload} to i32"),
+            Type::Float => format!("bitcast i64 {payload} to double"),
+            Type::String | Type::List(_) | Type::FixedList(_, _) => {
+                format!("inttoptr i64 {payload} to ptr")
+            }
+            _ => return Err(self.error("unsupported union member type")),
+        };
+        self.emit(format!("{result} = {conversion}"));
+        Ok(Value {
+            ty: target.clone(),
+            operand: result,
+        })
     }
 
     fn emit_function(&mut self, info: &FunctionInfo<'a>) -> Result<String, Diagnostic> {
@@ -823,7 +1039,68 @@ impl<'g, 'a> FunctionEmitter<'g, 'a> {
                     operand: pointer,
                 })
             }
-            Literal::List(_) => Err(self.error("list literals are not supported by this backend")),
+            Literal::List(elements) => {
+                if elements.is_empty() {
+                    let list_ptr = self.fresh_temp();
+                    self.emit(format!("{list_ptr} = call ptr @malloc(i64 16)"));
+                    let len_ptr = self.fresh_temp();
+                    self.emit(format!("{len_ptr} = getelementptr inbounds %RuneList, ptr {list_ptr}, i32 0, i32 0"));
+                    self.emit(format!("store i64 0, ptr {len_ptr}"));
+                    let data_ptr = self.fresh_temp();
+                    self.emit(format!("{data_ptr} = getelementptr inbounds %RuneList, ptr {list_ptr}, i32 0, i32 1"));
+                    self.emit(format!("store ptr null, ptr {data_ptr}"));
+                    return Ok(Value {
+                        ty: Type::List(vec![]),
+                        operand: list_ptr,
+                    });
+                }
+                let mut values = Vec::with_capacity(elements.len());
+                let mut types = Vec::<Type>::new();
+                for expression in elements {
+                    let value = self.emit_expression(expression)?;
+                    if !types.contains(&value.ty) {
+                        types.push(value.ty.clone());
+                    }
+                    values.push(value);
+                }
+                let element_type = if types.len() == 1 {
+                    types[0].clone()
+                } else {
+                    Type::Union(types)
+                };
+                let data_bytes = self.fresh_temp();
+                self.emit(format!("{data_bytes} = mul i64 {}, 16", values.len()));
+                let data = self.fresh_temp();
+                self.emit(format!("{data} = call ptr @malloc(i64 {data_bytes})"));
+                for (index, value) in values.into_iter().enumerate() {
+                    let packed = if matches!(element_type, Type::Union(_)) {
+                        self.coerce(value, &element_type)?
+                    } else {
+                        self.pack_union(value)?
+                    };
+                    let slot = self.fresh_temp();
+                    self.emit(format!(
+                        "{slot} = getelementptr inbounds %RuneValue, ptr {data}, i64 {index}"
+                    ));
+                    self.emit(format!("store %RuneValue {}, ptr {slot}", packed.operand));
+                }
+                let list_ptr = self.fresh_temp();
+                self.emit(format!("{list_ptr} = call ptr @malloc(i64 16)"));
+                let len_ptr = self.fresh_temp();
+                self.emit(format!(
+                    "{len_ptr} = getelementptr inbounds %RuneList, ptr {list_ptr}, i32 0, i32 0"
+                ));
+                self.emit(format!("store i64 {}, ptr {len_ptr}", elements.len()));
+                let data_ptr = self.fresh_temp();
+                self.emit(format!(
+                    "{data_ptr} = getelementptr inbounds %RuneList, ptr {list_ptr}, i32 0, i32 1"
+                ));
+                self.emit(format!("store ptr {data}, ptr {data_ptr}"));
+                Ok(Value {
+                    ty: Type::List(vec![element_type]),
+                    operand: list_ptr,
+                })
+            }
         }
     }
 
@@ -1150,12 +1427,97 @@ impl<'g, 'a> FunctionEmitter<'g, 'a> {
                 step,
                 body,
             } => self.emit_range_loop(var, start, end.as_ref(), step.as_ref(), body)?,
-            LoopExpr::ForEach { .. } => {
-                return Err(self.error(
-                    "foreach loops require list support, which is not available in this backend",
-                ));
-            }
+            LoopExpr::ForEach {
+                var,
+                iterable,
+                body,
+            } => self.emit_foreach(var, iterable, body)?,
         }
+        Ok(())
+    }
+
+    fn emit_foreach(
+        &mut self,
+        var: &str,
+        iterable: &Expression,
+        body: &[Statement],
+    ) -> Result<(), Diagnostic> {
+        let list = self.emit_expression(iterable)?;
+        let element_type = match &list.ty {
+            Type::List(types) | Type::FixedList(types, _) if types.len() == 1 => types[0].clone(),
+            Type::List(types) | Type::FixedList(types, _) if !types.is_empty() => {
+                Type::Union(types.clone())
+            }
+            _ => return Err(self.error("foreach requires a non-empty list type")),
+        };
+        let length_ptr = self.fresh_temp();
+        self.emit(format!(
+            "{length_ptr} = getelementptr inbounds %RuneList, ptr {}, i32 0, i32 0",
+            list.operand
+        ));
+        let length = self.fresh_temp();
+        self.emit(format!("{length} = load i64, ptr {length_ptr}"));
+        let data_ptr = self.fresh_temp();
+        self.emit(format!(
+            "{data_ptr} = getelementptr inbounds %RuneList, ptr {}, i32 0, i32 1",
+            list.operand
+        ));
+        let data = self.fresh_temp();
+        self.emit(format!("{data} = load ptr, ptr {data_ptr}"));
+        let index_slot = self.fresh_temp();
+        self.emit(format!("{index_slot} = alloca i64"));
+        self.emit(format!("store i64 0, ptr {index_slot}"));
+        let header = self.fresh_label("foreach.head");
+        let item = self.fresh_label("foreach.body");
+        let increment = self.fresh_label("foreach.next");
+        let exit = self.fresh_label("foreach.end");
+        self.branch(&header);
+        self.begin_block(&header);
+        let index = self.fresh_temp();
+        self.emit(format!("{index} = load i64, ptr {index_slot}"));
+        let more = self.fresh_temp();
+        self.emit(format!("{more} = icmp ult i64 {index}, {length}"));
+        self.emit(format!("br i1 {more}, label %{item}, label %{exit}"));
+        self.terminated = true;
+        self.begin_block(&item);
+        let element_ptr = self.fresh_temp();
+        self.emit(format!(
+            "{element_ptr} = getelementptr inbounds %RuneValue, ptr {data}, i64 {index}"
+        ));
+        let packed = self.fresh_temp();
+        self.emit(format!("{packed} = load %RuneValue, ptr {element_ptr}"));
+        let value = Value {
+            ty: Type::Union(vec![element_type.clone()]),
+            operand: packed,
+        };
+        let value = if matches!(element_type, Type::Union(_)) {
+            Value {
+                ty: element_type.clone(),
+                operand: value.operand,
+            }
+        } else {
+            self.unpack_union(value, &element_type)?
+        };
+        self.loop_exits.push(LoopTarget {
+            label: exit.clone(),
+            used: false,
+        });
+        self.scopes.push(HashMap::new());
+        let binding = self.allocate(&element_type, Some(&value))?;
+        self.scopes
+            .last_mut()
+            .expect("loop scope exists")
+            .insert(var.to_owned(), binding);
+        self.emit_block(body)?;
+        self.scopes.pop();
+        self.loop_exits.pop();
+        self.branch(&increment);
+        self.begin_block(&increment);
+        let next = self.fresh_temp();
+        self.emit(format!("{next} = add i64 {index}, 1"));
+        self.emit(format!("store i64 {next}, ptr {index_slot}"));
+        self.branch(&header);
+        self.begin_block(&exit);
         Ok(())
     }
 
@@ -1394,8 +1756,50 @@ impl<'g, 'a> FunctionEmitter<'g, 'a> {
                     value.operand
                 ));
             }
+            Type::Union(types) => self.emit_union_output(&types, &value.operand)?,
+            Type::List(_) | Type::FixedList(_, _) => {
+                self.emit(format!("call void @rune.print.list(ptr {})", value.operand));
+                self.emit("call i32 @putchar(i32 10)");
+            }
             other => return Err(self.error(format!("cannot output values of type {:?}", other))),
         }
+        Ok(())
+    }
+
+    fn emit_union_output(&mut self, types: &[Type], operand: &str) -> Result<(), Diagnostic> {
+        let tag_value = self.fresh_temp();
+        self.emit(format!(
+            "{tag_value} = extractvalue %RuneValue {operand}, 0"
+        ));
+        let end = self.fresh_label("union.print.end");
+        for ty in types {
+            if matches!(ty, Type::Union(_)) {
+                return Err(self.error("nested unions cannot be printed by this backend"));
+            }
+            let tag = Self::union_tag(ty)
+                .ok_or_else(|| self.error("unsupported union member for output"))?;
+            let is_type = self.fresh_temp();
+            self.emit(format!("{is_type} = icmp eq i32 {tag_value}, {tag}"));
+            let case = self.fresh_label("union.print.case");
+            let next = self.fresh_label("union.print.next");
+            self.emit(format!("br i1 {is_type}, label %{case}, label %{next}"));
+            self.terminated = true;
+            self.begin_block(&case);
+            let value = self.unpack_union(
+                Value {
+                    ty: Type::Union(types.to_vec()),
+                    operand: operand.to_owned(),
+                },
+                ty,
+            )?;
+            self.emit_output(value)?;
+            self.branch(&end);
+            self.begin_block(&next);
+        }
+        self.emit("call void @llvm.trap()");
+        self.emit("unreachable");
+        self.terminated = true;
+        self.begin_block(&end);
         Ok(())
     }
 

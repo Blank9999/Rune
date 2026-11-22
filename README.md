@@ -50,6 +50,6 @@ The `build` command invokes `clang` from `PATH`. Generated executables target th
 
 ## Backend support
 
-The first backend milestone supports top-level statements, scalar `int`, `float`, `bool`, `char`, and `string` values, named functions with default parameters, calls and recursion, arithmetic and comparisons, short-circuit boolean operators, conditionals, condition and range loops, `guard`, primitive input, and output. Range ends are exclusive; positive and negative steps work, while a zero step traps at runtime. Character input and output use Unicode scalar values.
+The backend supports top-level statements, scalar `int`, `float`, `bool`, `char`, and `string` values, named functions with default parameters, calls and recursion, arithmetic and comparisons, short-circuit boolean operators, conditionals, range loops, `guard`, primitive input, and output. Range ends are exclusive; positive and negative steps work, while a zero step traps at runtime. Character input and output use Unicode scalar values.
 
-List operations, foreach loops, string interpolation, string concatenation and comparisons, and string input are not yet supported by the backend. The compiler reports a source diagnostic for unsupported constructs.
+Lists and unions can be declared, assigned, passed to and returned from functions, iterated with `loop item -> values { ... }`, and printed. Mixed list values use tagged runtime values. Fixed-list length constraints are checked by the frontend. Rune does not yet have list indexing or element mutation. String interpolation, string concatenation and comparisons, and string input are not supported by the backend; these constructs produce a source diagnostic.

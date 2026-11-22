@@ -407,12 +407,7 @@ impl SemanticAnalyzer {
                         Ok(())
                     }
 
-                    Type::Union(_) => {
-                        println!(
-                            "Warning: Outputting a Union type. Behavior depends on runtime implementation."
-                        );
-                        Ok(())
-                    }
+                    Type::Union(_) => Ok(()),
 
                     _ => {
                         // Consider allowing Union output by printing compatible types
